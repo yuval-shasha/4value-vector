@@ -61,7 +61,8 @@ class vec4state
         vec4state operator!=(const vec4state& other) const;
         vec4state operator==(long num) const;
         vec4state operator!=(long num) const;
-        //vec4state operator===(const vec4state& other) const;
+        // TODO: What should we do with these operators???
+        // vec4state operator===(const vec4state& other) const;
         // vec4state operator!==(const vec4state& other) const;
 
         // Shift operators
@@ -72,9 +73,11 @@ class vec4state
         vec4state operator<<(const long num);
         vec4state operator>>(const long num);
 
-        // Slice operators
-        // TODO: How to write the declaration of slice and set []???
+        // Slice methods
         vec4state operator[](const vec4state& index);
+        vec4state operator[](const long index);
+        vec4state slice(long end, long start);
+        // TODO: How to write the declarations of the setters for these methods???
 
         // Logical operators
         vec4state operator&&(const vec4state& other) const;
@@ -105,6 +108,7 @@ class vec4state
         vec4state operator%(const vec4state& other) const;
         vec4state operator%(long num) const;
         vec4state operator-() const;
+        // TODO: What should we do with these operators???
         // vec4state operator**(const vec4state& other) const;
         // vec4state operator**(long num) const;
         
