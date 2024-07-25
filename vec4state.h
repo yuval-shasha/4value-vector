@@ -15,17 +15,10 @@ class vec4state
         // Size is the number of bits in the vector
         size_t size;
 
-        // Getters and setters for internal use
-        // Returns the a_val of the VPI at index "index" in the field vector
-        uint32_t getAvalAtIndex(unsigned int index) const;
-        // Sets the a_val of the VPI at index "index" in the field vector to new_val
-        void setAvalAtIndex(unsigned int index, uint32_t new_val);
-        // Returns the b_val of the VPI at index "index" in the field vector
-        uint32_t getBvalAtIndex(unsigned int index) const;
-        // Sets the b_val of the VPI at index "index" in the field vector to new_val
-        void setBvalAtIndex(unsigned int index, uint32_t new_val);
         // Returns true if the vector contains x or z, otherwise returns false
         bool isUnknown() const;
+        // Returns the number of VPI elements in the vector
+        int getVectorSize() const;
 
     public:
         // C'tors
@@ -62,8 +55,8 @@ class vec4state
 
         // Equality operators
         vec4state operator==(const vec4state& other) const;
-        vec4state operator!=(const vec4state& other) const;
         vec4state operator==(long num) const;
+        vec4state operator!=(const vec4state& other) const;
         vec4state operator!=(long num) const;
         // Checks if the vector is equal to other, including x's and z's. Returns a vector of 1's if true and 0's otherwise.
         vec4state caseEquality(const vec4state& other) const;
@@ -73,9 +66,9 @@ class vec4state
         // Shift operators
         // If other contains x or z, returns a vector that is all x's.
         vec4state operator<<(const vec4state& other);
+        vec4state operator<<(const long num);
         // If other contains x or z, returns a vector that is all x's.
         vec4state operator>>(const vec4state& other);
-        vec4state operator<<(const long num);
         vec4state operator>>(const long num);
 
         // Slice methods

@@ -1,26 +1,14 @@
 #include "vec4state.h"
-
-uint32_t vec4state::getAvalAtIndex(unsigned int index) const {
-    return vector[index].getAval();
-}
-
-void vec4state::setAvalAtIndex(unsigned int index, uint32_t new_val) {
-    vector[index].setAval(new_val);
-}
-        
-uint32_t vec4state::getBvalAtIndex(unsigned int index) const {
-    return vector[index].getBval();
-}
-        
-void vec4state::setBvalAtIndex(unsigned int index, uint32_t new_val) {
-    vector[index].setBval(new_val);
-}
         
 bool vec4state::isUnknown() const {
     for (int i = 0; i < size; i++) {
         if (vector[i].getBval() != 0) return true;
     }
     return false;
+}
+
+int vec4state::getVectorSize() const {
+    return (size + 31) / 32;
 }
 
 vec4state::vec4state()
@@ -86,9 +74,9 @@ int fillMSBChunk(VPI* vector, const string& str, int cellSize, int cellIndex)
 
 vec4state::vec4state(string str)
 {
-    vector = new VPI[(str.length() + 31) / 32];
     size = str.length();
-    int vecSize = (str.length() + 31) / 32;
+    vector = new VPI[getVectorSize()];
+    int vecSize = getVectorSize();
     bool dividedBy32 = (size % 32 == 0);
     int strIndex = 0;
     for (int i = vecSize - 1; i >= 0; i--)
@@ -139,8 +127,8 @@ vec4state::vec4state(string str, size_t size)
     vec4state(result_str);
 }
 
-vec4state::vec4state(const vec4state& other) : size(other.size), vector(new VPI[(other.size + 31) / 32]) {
-    for (int i = 0; i < size; i++) {
+vec4state::vec4state(const vec4state& other) : size(other.size), vector(new VPI[other.getVectorSize()]) {
+    for (int i = 0; i < other.getVectorSize(); i++) {
         vector[i] = other.vector[i];
     }
 }
@@ -154,8 +142,8 @@ vec4state& vec4state::operator=(const vec4state& other) {
     if (this == &other) return *this;
     delete[] vector;
     size = other.size;
-    vector = new VPI[(size + 31) / 32];
-    for (int i = 0; i < (size + 31) / 32; i++) {
+    vector = new VPI[getVectorSize()];
+    for (int i = 0; i < getVectorSize(); i++) {
         vector[i] = other.vector[i];
     }
     return *this;
@@ -177,29 +165,33 @@ vec4state& vec4state::operator=(string str) {
 }
 
 vec4state vec4state::operator&(const vec4state& other) const {
-
+    return ~(~*this | ~other);
 }
 
 vec4state vec4state::operator&(long num) const {
-
+    return *this & vec4state(num);
 }
 
 vec4state vec4state::operator|(const vec4state& other) const {
-
+    
 }
 
 vec4state vec4state::operator|(long num) const {
-
+    return *this | vec4state(num);
 }
 
 vec4state vec4state::operator^(const vec4state& other) const {
-
+    return (*this & ~other) | (~*this & other);
 }
 
 vec4state vec4state::operator^(long num) const {
-
+    return *this ^ vec4state(num);
 }
 
 vec4state vec4state::operator~() const {
-
+    vec4state result = *this;
+    for (int i = 0; i < getVectorSize(); i++) {
+        result.vector[i].setAval(~(result.vector[i].getAval() | result.vector[i].getBval()));
+    }
+    return result;
 }

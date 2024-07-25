@@ -30,6 +30,10 @@ class VPI
         void setAval(uint32_t new_val) { a_val = new_val; };
         // Sets the b_val field of the VPI to new_val
         void setBval(uint32_t new_val) { b_val = new_val; };
+
+        // Equality operator
+        bool operator==(const VPI& other) const { return (a_val == other.a_val); };
+        bool caseEquality(const VPI& other) const { return (a_val == other.a_val && b_val == other.b_val); };
 };
 
 #endif // VPI_H
