@@ -14,12 +14,21 @@ class VPI
         uint32_t a_val;
         uint32_t b_val;
     public:
+        // C'tors, default value is x
         VPI() : a_val(0), b_val(0xFFFFFFFF) {};
         VPI(uint32_t a, uint32_t b) : a_val(a), b_val(b) {};
+
+        // D'tor
         ~VPI();
+
+        // Getters and setters
+        // Returns the a_val field of the VPI
         uint32_t getAval() const { return a_val; };
+        // Returns the b_val field of the VPI
         uint32_t getBval() const { return b_val; };
+        // Sets the a_val field of the VPI to new_val
         void setAval(uint32_t new_val) { a_val = new_val; };
+        // Sets the b_val field of the VPI to new_val
         void setBval(uint32_t new_val) { b_val = new_val; };
 };
 
