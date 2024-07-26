@@ -1,4 +1,5 @@
 #include "vec4state.h"
+#include "math.h"
         
 bool vec4state::isUnknown() const {
     for (int i = 0; i < size; i++) {
@@ -173,7 +174,26 @@ vec4state vec4state::operator&(long num) const {
 }
 
 vec4state vec4state::operator|(const vec4state& other) const {
-    
+    vec4state copy_this = *this;
+    vec4state copy_other = other;
+    vec4state result;
+    for (int i = 0; i < getVectorSize(); i++) {
+        copy_this.vector[i].setAval(copy_this.vector[i].getAval() - (copy_this.vector[i].getAval() & copy_this.vector[i].getBval()));
+    }
+    for (int i = 0; i < other.getVectorSize(); i++) {
+        copy_other.vector[i].setAval(copy_other.vector[i].getAval() - (copy_other.vector[i].getAval() & copy_other.vector[i].getBval()));
+    }
+    for (int i = 0; i < min(getVectorSize(), other.getVectorSize()); i++) {
+        copy_this.vector[i].setBval(copy_this.vector[i].getBval() - (copy_other.vector[i].getAval() & copy_this.vector[i].getBval()));
+        copy_other.vector[i].setBval(copy_other.vector[i].getBval() - (copy_this.vector[i].getAval() & copy_other.vector[i].getBval()));
+    }
+    if (getVectorSize() > other.getVectorSize()) result = copy_this;
+    else result = copy_other;
+    for (int i = 0; i < min(getVectorSize(), other.getVectorSize()); i++) {
+        result.vector[i].setAval(copy_this.vector[i].getAval() | copy_other.vector[i].getAval());
+        result.vector[i].setBval(copy_this.vector[i].getBval() | copy_other.vector[i].getBval());
+    }
+    return result;
 }
 
 vec4state vec4state::operator|(long num) const {
@@ -194,4 +214,42 @@ vec4state vec4state::operator~() const {
         result.vector[i].setAval(~(result.vector[i].getAval() | result.vector[i].getBval()));
     }
     return result;
+}
+
+vec4state vec4state::operator==(const vec4state& other) const {
+    if (isUnknown() || other.isUnknown()) return vec4state("x", 1);
+    if (getVectorSize() != other.getVectorSize()) return vec4state("0", 1);
+    else {
+        for (int i = 0; i < getVectorSize(); i++) {
+            if (vector[i].getAval() != other.vector[i].getAval()) return vec4state("0", 1);
+        }
+        return vec4state("1", 1);
+    }
+}
+
+vec4state vec4state::operator==(long num) const {
+    return *this == vec4state(num);
+}
+
+vec4state vec4state::operator!=(const vec4state& other) const {
+    if (isUnknown() || other.isUnknown()) return vec4state("x", 1);
+    else return ~(*this == other);
+}
+
+vec4state vec4state::operator!=(long num) const {
+    return *this != vec4state(num);
+}
+
+vec4state vec4state::caseEquality(const vec4state& other) const {
+    if (getVectorSize() != other.getVectorSize()) return vec4state("0", 1);
+    else {
+        for (int i = 0; i < getVectorSize(); i++) {
+            if (vector[i].getAval() != other.vector[i].getAval() || vector[i].getBval() != other.vector[i].getBval())   return vec4state("0", 1);
+        }
+        return vec4state("1", 1);
+    }
+}
+
+vec4state vec4state::caseInequality(const vec4state& other) const {
+    return ~caseEquality(other);
 }
