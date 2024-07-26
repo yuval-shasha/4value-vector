@@ -115,6 +115,12 @@ class vec4state
         
         // Casting operators
         // TODO: Figure out how to implement these
+
+        // Getters
+        // Returns the size of the vector
+        size_t getSize() const;
+        // Returns the value of the vector as a string
+        string toString() const;
 };
 
 

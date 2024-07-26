@@ -253,3 +253,11 @@ vec4state vec4state::caseEquality(const vec4state& other) const {
 vec4state vec4state::caseInequality(const vec4state& other) const {
     return ~caseEquality(other);
 }
+
+size_t vec4state::getSize() const {
+    return size;
+}
+
+string vec4state::toString() const {
+    
+}
