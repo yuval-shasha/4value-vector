@@ -283,11 +283,17 @@ vec4state vec4state::caseInequality(const vec4state& other) const {
     return ~caseEquality(other);
 }
 
+vec4state vec4state::operator[](const long index){
+    if (index >= size || index < 0) return vec4state("x", 1);
+    return this->getSlice(index, index);
+}
+
+/*********** For testing purposes ***********/
+
 size_t vec4state::getSize() const {
     return size;
 }
 
-// For testing purposes
 // Returns a string representation of the vector
 string vec4state::toString() const {
     string result;
@@ -311,3 +317,4 @@ string vec4state::toString() const {
     }
     return result;
 }
+
