@@ -1,8 +1,9 @@
 #include "vec4state.h"
 #include "math.h"
-        
+
+// Returns true if the vector contains x or z, otherwise returns false      
 bool vec4state::isUnknown() const {
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < getVectorSize(); i++) {
         if (vector[i].getBval() != 0) return true;
     }
     return false;
@@ -119,6 +120,7 @@ vec4state::vec4state(string str)
     }
 }
     
+// Expects a string of size 1 to be repeated "size" times. 
 vec4state::vec4state(string str, size_t size)
 {
     string result_str;
@@ -177,16 +179,21 @@ vec4state vec4state::operator|(const vec4state& other) const {
     vec4state copy_this = *this;
     vec4state copy_other = other;
     vec4state result;
+
+    // For copy_this: a_val = a_val - (a_val & b_val)
     for (int i = 0; i < getVectorSize(); i++) {
         copy_this.vector[i].setAval(copy_this.vector[i].getAval() - (copy_this.vector[i].getAval() & copy_this.vector[i].getBval()));
     }
+    // For copy_other: a_val = a_val - (a_val & b_val)
     for (int i = 0; i < other.getVectorSize(); i++) {
         copy_other.vector[i].setAval(copy_other.vector[i].getAval() - (copy_other.vector[i].getAval() & copy_other.vector[i].getBval()));
     }
+    
     for (int i = 0; i < min(getVectorSize(), other.getVectorSize()); i++) {
         copy_this.vector[i].setBval(copy_this.vector[i].getBval() - (copy_other.vector[i].getAval() & copy_this.vector[i].getBval()));
         copy_other.vector[i].setBval(copy_other.vector[i].getBval() - (copy_this.vector[i].getAval() & copy_other.vector[i].getBval()));
     }
+
     if (getVectorSize() > other.getVectorSize()) result = copy_this;
     else result = copy_other;
     for (int i = 0; i < min(getVectorSize(), other.getVectorSize()); i++) {
@@ -218,13 +225,25 @@ vec4state vec4state::operator~() const {
 
 vec4state vec4state::operator==(const vec4state& other) const {
     if (isUnknown() || other.isUnknown()) return vec4state("x", 1);
-    if (getVectorSize() != other.getVectorSize()) return vec4state("0", 1);
-    else {
-        for (int i = 0; i < getVectorSize(); i++) {
-            if (vector[i].getAval() != other.vector[i].getAval()) return vec4state("0", 1);
-        }
-        return vec4state("1", 1);
+    
+    for (int i = 0; i < min(getVectorSize(), other.getVectorSize()); i++) {
+        if (vector[i].getAval() != other.vector[i].getAval())
+            return vec4state("0", 1);
     }
+
+    // If the vectors are of different sizes, check if the larger vector has any bits set to 1
+    if (getVectorSize() > other.getVectorSize()) {
+        for (int i = other.getVectorSize(); i < getVectorSize(); i++) {
+            if (vector[i].getAval() != 0)
+                return vec4state("0", 1);
+        }
+    } else if (getVectorSize() < other.getVectorSize()) {
+        for (int i = getVectorSize(); i < other.getVectorSize(); i++) {
+            if (other.vector[i].getAval() != 0)
+                return vec4state("0", 1);
+        }
+    }
+    return vec4state("1", 1);
 }
 
 vec4state vec4state::operator==(long num) const {
@@ -232,8 +251,7 @@ vec4state vec4state::operator==(long num) const {
 }
 
 vec4state vec4state::operator!=(const vec4state& other) const {
-    if (isUnknown() || other.isUnknown()) return vec4state("x", 1);
-    else return ~(*this == other);
+    return ~(*this == other);
 }
 
 vec4state vec4state::operator!=(long num) const {
@@ -241,13 +259,24 @@ vec4state vec4state::operator!=(long num) const {
 }
 
 vec4state vec4state::caseEquality(const vec4state& other) const {
-    if (getVectorSize() != other.getVectorSize()) return vec4state("0", 1);
-    else {
-        for (int i = 0; i < getVectorSize(); i++) {
-            if (vector[i].getAval() != other.vector[i].getAval() || vector[i].getBval() != other.vector[i].getBval())   return vec4state("0", 1);
-        }
-        return vec4state("1", 1);
+    for (int i = 0; i < min(getVectorSize(), other.getVectorSize()); i++) {
+        if (vector[i].getAval() != other.vector[i].getAval() || vector[i].getBval() != other.vector[i].getBval())
+            return vec4state("0", 1);
     }
+    
+    // If the vectors are of different sizes, check if the larger vector has any bits set to 1
+    if (getVectorSize() > other.getVectorSize()) {
+        for (int i = other.getVectorSize(); i < getVectorSize(); i++) {
+            if (vector[i].getAval() != 0 || vector[i].getBval() != 0)
+                return vec4state("0", 1);
+        }
+    } else if (getVectorSize() < other.getVectorSize()) {
+        for (int i = getVectorSize(); i < other.getVectorSize(); i++) {
+            if (other.vector[i].getAval() != 0 || other.vector[i].getBval() != 0)
+                return vec4state("0", 1);
+        }
+    }
+    return vec4state("1", 1);
 }
 
 vec4state vec4state::caseInequality(const vec4state& other) const {
@@ -258,6 +287,27 @@ size_t vec4state::getSize() const {
     return size;
 }
 
+// For testing purposes
+// Returns a string representation of the vector
 string vec4state::toString() const {
-    
+    string result;
+    for (int i = getVectorSize() - 1; i >= 0; i--) 
+    {
+        uint32_t currAval = vector[i].getAval();
+        uint32_t currBval = vector[i].getBval();
+        for (int j = 31; j >= 0; j--) 
+        {
+            if (i == getVectorSize() - 1 && size % 32 != 0 && j > size % 32) continue;
+            uint32_t mask = 1 << j;
+            if ((currAval & mask) && (currBval & mask)) 
+                result += "z";
+            else if (currAval & mask)
+                result += "1";
+            else if (currBval & mask)
+                result += "x";
+            else
+                result += "0";
+        }
+    }
+    return result;
 }
