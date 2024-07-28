@@ -1,7 +1,6 @@
 #include "vec4state.h"
 #include "math.h"
-
-// Returns true if the vector contains x or z, otherwise returns false      
+      
 bool vec4state::isUnknown() const {
     for (int i = 0; i < getVectorSize(); i++) {
         if (vector[i].getBval() != 0) return true;
@@ -9,7 +8,7 @@ bool vec4state::isUnknown() const {
     return false;
 }
 
-int vec4state::getVectorSize() const {
+size_t vec4state::getVectorSize() const {
     return (size + 31) / 32;
 }
 
@@ -27,11 +26,11 @@ vec4state::vec4state(int num)
     vector[0].setBval(0);
 }
 
-vec4state::vec4state(long num)
+vec4state::vec4state(long long num)
 {
     vector = new VPI[2];
     size = 64;
-    long mask = 0xFFFFFFFF;
+    long long mask = 0xFFFFFFFF;
     vector[0].setAval(num & mask);
     vector[1].setAval(num >> 32);
     vector[0].setBval(0);
@@ -120,7 +119,6 @@ vec4state::vec4state(string str)
     }
 }
     
-// Expects a string of size 1 to be repeated "size" times. 
 vec4state::vec4state(string str, size_t size)
 {
     string result_str;
@@ -157,7 +155,7 @@ vec4state& vec4state::operator=(int num) {
     return *this;
 }
 
-vec4state& vec4state::operator=(long num) {
+vec4state& vec4state::operator=(long long num) {
     *this = vec4state(num);
     return *this;
 }
@@ -171,7 +169,7 @@ vec4state vec4state::operator&(const vec4state& other) const {
     return ~(~*this | ~other);
 }
 
-vec4state vec4state::operator&(long num) const {
+vec4state vec4state::operator&(long long num) const {
     return *this & vec4state(num);
 }
 
@@ -203,7 +201,7 @@ vec4state vec4state::operator|(const vec4state& other) const {
     return result;
 }
 
-vec4state vec4state::operator|(long num) const {
+vec4state vec4state::operator|(long long num) const {
     return *this | vec4state(num);
 }
 
@@ -211,7 +209,7 @@ vec4state vec4state::operator^(const vec4state& other) const {
     return (*this & ~other) | (~*this & other);
 }
 
-vec4state vec4state::operator^(long num) const {
+vec4state vec4state::operator^(long long num) const {
     return *this ^ vec4state(num);
 }
 
@@ -246,7 +244,7 @@ vec4state vec4state::operator==(const vec4state& other) const {
     return vec4state("1", 1);
 }
 
-vec4state vec4state::operator==(long num) const {
+vec4state vec4state::operator==(long long num) const {
     return *this == vec4state(num);
 }
 
@@ -254,7 +252,7 @@ vec4state vec4state::operator!=(const vec4state& other) const {
     return ~(*this == other);
 }
 
-vec4state vec4state::operator!=(long num) const {
+vec4state vec4state::operator!=(long long num) const {
     return *this != vec4state(num);
 }
 
@@ -283,7 +281,7 @@ vec4state vec4state::caseInequality(const vec4state& other) const {
     return ~caseEquality(other);
 }
 
-vec4state vec4state::operator[](const long index){
+vec4state vec4state::operator[](const long long index){
     if (index >= size || index < 0) return vec4state("x", 1);
     return this->getSlice(index, index);
 }
@@ -294,7 +292,6 @@ size_t vec4state::getSize() const {
     return size;
 }
 
-// Returns a string representation of the vector
 string vec4state::toString() const {
     string result;
     for (int i = getVectorSize() - 1; i >= 0; i--) 
