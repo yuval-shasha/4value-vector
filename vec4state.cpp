@@ -286,6 +286,103 @@ vec4state vec4state::operator[](const long long index){
     return this->getSlice(index, index);
 }
 
+vec4state vec4state::operator&&(const vec4state& other) const {
+    int first = 0, second = 0;
+    if (getVectorSize() > other.getVectorSize()) {
+        for (int i = getVectorSize() - 1; i >= other.getVectorSize(); i--) {
+            // Remove the bits of the z's
+            uint32_t tmp = vector[i].getAval() - (vector[i].getAval() & vector[i].getBval());
+            if (tmp != 0){
+                first = 1;
+                break;
+            }
+        }
+    }
+    else if (getVectorSize() < other.getVectorSize()) {
+        for (int i = other.getVectorSize() - 1; i >= getVectorSize(); i--) {
+            // Remove the bits of the z's
+            uint32_t tmp = other.vector[i].getAval() - (other.vector[i].getAval() & other.vector[i].getBval());
+            if (tmp != 0){
+                second = 1;
+                break;
+            }
+        }
+    }
+    for (int i = min(getVectorSize(), other.getVectorSize()) - 1; i >= 0; i--) {
+        if (first == 1 || second == 1) return vec4state("1", 1);
+        // Remove the bits of the z's
+        uint32_t tmp1 = vector[i].getAval() - (vector[i].getAval() & vector[i].getBval());
+        uint32_t tmp2 = other.vector[i].getAval() - (other.vector[i].getAval() & other.vector[i].getBval());
+        if (tmp1 != 0) first = 1;
+        if (tmp2 != 0) second = 1;
+    }
+    // After checking all the bits
+
+    // If both vector hava at least one bit set to 1
+    if (first == 1 && second == 1) return vec4state("1", 1);
+
+    // If at least one of the vectors has all bits set to 0
+    if (first == 0 && !isUnknown()) return vec4state("0", 1);
+    if (second == 0 && !other.isUnknown()) return vec4state("0", 1);
+
+    // If at one of the vectors has at least one bit set to 1 and the other is unknown
+    return vec4state("x", 1);
+}
+
+vec4state vec4state::operator&&(long long num) const {
+    return *this && vec4state(num);
+}
+
+vec4state vec4state::operator||(const vec4state& other) const {
+    if (getVectorSize() > other.getVectorSize()) {
+        for (int i = getVectorSize() - 1; i >= other.getVectorSize(); i--) {
+            // Remove the bits of the z's
+            uint32_t tmp = vector[i].getAval() - (vector[i].getAval() & vector[i].getBval());
+            if (tmp != 0) return vec4state("1", 1);
+        }
+    }
+    else if (getVectorSize() < other.getVectorSize()) {
+        for (int i = other.getVectorSize() - 1; i >= getVectorSize(); i--) {
+            // Remove the bits of the z's
+            uint32_t tmp = other.vector[i].getAval() - (other.vector[i].getAval() & other.vector[i].getBval());
+            if (tmp != 0) return vec4state("1", 1);
+        }
+    }
+    for (int i = min(getVectorSize(), other.getVectorSize()) - 1; i >= 0; i--) {
+        // Remove the bits of the z's
+        uint32_t tmp1 = vector[i].getAval() - (vector[i].getAval() & vector[i].getBval());
+        uint32_t tmp2 = other.vector[i].getAval() - (other.vector[i].getAval() & other.vector[i].getBval());
+        if (tmp1 != 0) return vec4state("1", 1);
+        if (tmp2 != 0) return vec4state("1", 1);
+    }
+    // After checking all the bits
+    // Now we know that both vectors have all bits set to 0 or are unknown
+
+    if (isUnknown() || other.isUnknown()) return vec4state("x", 1);
+
+    // If both vectors have all bits set to 0
+    return vec4state("0", 1);
+}
+
+vec4state vec4state::operator||(long long num) const {
+    return *this || vec4state(num);
+}
+
+vec4state vec4state::operator!() const {
+    for (int i = 0; i < getVectorSize(); i++) {
+        uint32_t tmp = vector[i].getAval() - (vector[i].getAval() & vector[i].getBval());
+        if (tmp != 0) return vec4state("0", 1);
+    }
+    // After checking all the bits
+    // Now we know that the vector has all bits set to 0 or is unknown
+
+    // If the vector has at least one bit set to x or z
+    if (isUnknown()) return vec4state("x", 1);
+
+    // If the vector has all bits set to 0
+    return vec4state("1", 1);
+}
+
 /*********** For testing purposes ***********/
 
 size_t vec4state::getSize() const {
