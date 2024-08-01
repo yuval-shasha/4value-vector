@@ -74,3 +74,46 @@ TEST_F(vec4stateTest, TestAssignmentOperators) {
     EXPECT_TRUE(compareVectorToString(copy, string("01xz11")));
     EXPECT_TRUE(checkVectorSize(copy, 6));
 }
+
+TEST_F(vec4stateTest, TestBitwiseOperators) {
+    // AND
+    vec4state andVector = intVector & intVector;
+    EXPECT_TRUE(compareVectorToString(andVector, string("00010010001101000101011001111000")));
+    EXPECT_TRUE(checkVectorSize(andVector, 32));
+
+    andVector = longLongVector & longLongVector;
+    EXPECT_TRUE(compareVectorToString(andVector, string("0001001000110100010101100111100010010000101010111100110111101111")));
+    EXPECT_TRUE(checkVectorSize(andVector, 64));
+
+    andVector = intVector & longLongVector;
+    EXPECT_TRUE(compareVectorToString(andVector, string("0000000000000000000000000000000000010000001000000100010001101000")));
+    EXPECT_TRUE(checkVectorSize(andVector, 64));
+
+    andVector = intVector & 0x1234567890ABCDEF;
+    EXPECT_TRUE(compareVectorToString(andVector, string("0001001000110100010101100111100010010000101010111100110111101111")));
+    EXPECT_TRUE(checkVectorSize(andVector, 64));
+
+    andVector = intVector & 0x12345678;
+    EXPECT_TRUE(compareVectorToString(andVector, string("00010010001101000101011001111000")));
+    EXPECT_TRUE(checkVectorSize(andVector, 32));
+
+    // add tests for string vector
+
+    // OR
+    vec4state orVector = intVector | longLongVector;
+    EXPECT_TRUE(compareVectorToString(orVector, string("0001001000110100010101100111100010010000101010111100110111101111")));
+    EXPECT_TRUE(checkVectorSize(orVector, 64));
+
+    orVector = intVector | 0x1234567890ABCDEF;
+    EXPECT_TRUE(compareVectorToString(orVector, string("0001001000110100010101100111100010010000101010111100110111101111")));
+    EXPECT_TRUE(checkVectorSize(orVector, 64));
+
+    // XOR
+    vec4state xorVector = intVector ^ longLongVector;
+    EXPECT_TRUE(compareVectorToString(xorVector, string("")));
+
+    // NOT
+    vec4state notVector = ~intVector;
+    EXPECT_TRUE(compareVectorToString(notVector, string("11101101110010111010100110000111")));
+    EXPECT_TRUE(checkVectorSize(notVector, 32));
+}
