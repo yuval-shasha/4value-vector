@@ -1,5 +1,8 @@
 #include "vec4state.h"
 #include "math.h"
+#include <iostream>
+
+using namespace std;
       
 bool vec4state::isUnknown() const {
     for (int i = 0; i < getVectorSize(); i++) {
@@ -8,17 +11,17 @@ bool vec4state::isUnknown() const {
     return false;
 }
 
-size_t vec4state::getVectorSize() const {
+long long vec4state::getVectorSize() const {
     return (size + 31) / 32;
 }
 
-vec4state::vec4state()
+vec4state::vec4state() : vector(nullptr)
 {
     vector = new VPI[1];
     size = 1;
 }
 
-vec4state::vec4state(int num)
+vec4state::vec4state(int num) : vector(nullptr)
 {
     vector = new VPI[1];
     size = 32;
@@ -26,25 +29,25 @@ vec4state::vec4state(int num)
     vector[0].setBval(0);
 }
 
-vec4state::vec4state(long long num)
+vec4state::vec4state(long long num) : vector(nullptr)
 {
     vector = new VPI[2];
     size = 64;
     long long mask = 0xFFFFFFFF;
-    vector[0].setAval(num & mask);
-    vector[1].setAval(num >> 32);
+    vector[0].setAval(uint32_t(num & mask));
+    vector[1].setAval(uint32_t(num >> 32));
     vector[0].setBval(0);
     vector[1].setBval(0);
 }
 
 // Helper function for filling the remainder of the string into the MSB chunk in the vector.
 // Returns the index of the string where the function stopped filling the vector.
-int fillMSBChunk(VPI* vector, const string& str, int cellSize, int cellIndex)
+int fillMSBChunk(VPI* vector, const string& str, long long cellSize, long long cellIndex)
 {
     int strIndex = 0;
     uint32_t aval = 0;
     uint32_t bval = 0;
-    for (int i = 0; i < cellSize; i++)
+    for (long long i = 0; i < cellSize; i++)
     {
         switch(str[strIndex])
         {
@@ -63,8 +66,8 @@ int fillMSBChunk(VPI* vector, const string& str, int cellSize, int cellIndex)
         }
         if (i < cellSize - 1)
         {
-            aval <<= 1;
-            bval <<= 1;
+            aval = aval << 1;
+            bval = bval << 1;
         }
         strIndex++;
     }
@@ -73,14 +76,18 @@ int fillMSBChunk(VPI* vector, const string& str, int cellSize, int cellIndex)
     return strIndex;
 }
 
-vec4state::vec4state(string str)
+vec4state::vec4state(string str) : vector(nullptr)
 {
     size = str.length();
+    if (size == 0) {
+        (*this) = vec4state("x", 1);
+        return;
+    }
     vector = new VPI[getVectorSize()];
-    int vecSize = getVectorSize();
+    long long vecSize = getVectorSize();
     bool dividedBy32 = (size % 32 == 0);
     int strIndex = 0;
-    for (int i = vecSize - 1; i >= 0; i--)
+    for (long long i = vecSize - 1; i >= 0; i--)
     {
         uint32_t aval = 0;
         uint32_t bval = 0;
@@ -119,22 +126,23 @@ vec4state::vec4state(string str)
     }
 }
     
-vec4state::vec4state(string str, size_t size)
+vec4state::vec4state(string str, long long size) : vector(nullptr)
 {
     string result_str;
     for (int i = 0; i < size; i++) {
         result_str += str;
     }
-    vec4state(result_str);
+    *this = vec4state(result_str);
 }
 
-vec4state::vec4state(const vec4state& other) : size(other.size), vector(new VPI[other.getVectorSize()]) {
+vec4state::vec4state(const vec4state& other) : size(other.size), vector(nullptr) {
+    vector = new VPI[other.getVectorSize()];
     for (int i = 0; i < other.getVectorSize(); i++) {
         vector[i] = other.vector[i];
     }
 }
 
-vec4state::~vec4state()
+vec4state::~vec4state() 
 {
     delete[] vector;
 }
@@ -231,12 +239,12 @@ vec4state vec4state::operator==(const vec4state& other) const {
 
     // If the vectors are of different sizes, check if the larger vector has any bits set to 1
     if (getVectorSize() > other.getVectorSize()) {
-        for (int i = other.getVectorSize(); i < getVectorSize(); i++) {
+        for (long long i = other.getVectorSize(); i < getVectorSize(); i++) {
             if (vector[i].getAval() != 0)
                 return vec4state("0", 1);
         }
     } else if (getVectorSize() < other.getVectorSize()) {
-        for (int i = getVectorSize(); i < other.getVectorSize(); i++) {
+        for (long long i = getVectorSize(); i < other.getVectorSize(); i++) {
             if (other.vector[i].getAval() != 0)
                 return vec4state("0", 1);
         }
@@ -264,12 +272,12 @@ vec4state vec4state::caseEquality(const vec4state& other) const {
     
     // If the vectors are of different sizes, check if the larger vector has any bits set to 1
     if (getVectorSize() > other.getVectorSize()) {
-        for (int i = other.getVectorSize(); i < getVectorSize(); i++) {
+        for (long long i = other.getVectorSize(); i < getVectorSize(); i++) {
             if (vector[i].getAval() != 0 || vector[i].getBval() != 0)
                 return vec4state("0", 1);
         }
     } else if (getVectorSize() < other.getVectorSize()) {
-        for (int i = getVectorSize(); i < other.getVectorSize(); i++) {
+        for (long long i = getVectorSize(); i < other.getVectorSize(); i++) {
             if (other.vector[i].getAval() != 0 || other.vector[i].getBval() != 0)
                 return vec4state("0", 1);
         }
@@ -286,7 +294,7 @@ vec4state vec4state::caseInequality(const vec4state& other) const {
 vec4state vec4state::operator&&(const vec4state& other) const {
     int first = 0, second = 0;
     if (getVectorSize() > other.getVectorSize()) {
-        for (int i = getVectorSize() - 1; i >= other.getVectorSize(); i--) {
+        for (long long i = getVectorSize() - 1; i >= other.getVectorSize(); i--) {
             // Remove the bits of the z's
             uint32_t tmp = vector[i].getAval() - (vector[i].getAval() & vector[i].getBval());
             if (tmp != 0){
@@ -296,7 +304,7 @@ vec4state vec4state::operator&&(const vec4state& other) const {
         }
     }
     else if (getVectorSize() < other.getVectorSize()) {
-        for (int i = other.getVectorSize() - 1; i >= getVectorSize(); i--) {
+        for (long long i = other.getVectorSize() - 1; i >= getVectorSize(); i--) {
             // Remove the bits of the z's
             uint32_t tmp = other.vector[i].getAval() - (other.vector[i].getAval() & other.vector[i].getBval());
             if (tmp != 0){
@@ -305,7 +313,7 @@ vec4state vec4state::operator&&(const vec4state& other) const {
             }
         }
     }
-    for (int i = min(getVectorSize(), other.getVectorSize()) - 1; i >= 0; i--) {
+    for (long long i = min(getVectorSize(), other.getVectorSize()) - 1; i >= 0; i--) {
         if (first == 1 || second == 1) return vec4state("1", 1);
         // Remove the bits of the z's
         uint32_t tmp1 = vector[i].getAval() - (vector[i].getAval() & vector[i].getBval());
@@ -332,20 +340,20 @@ vec4state vec4state::operator&&(long long num) const {
 
 vec4state vec4state::operator||(const vec4state& other) const {
     if (getVectorSize() > other.getVectorSize()) {
-        for (int i = getVectorSize() - 1; i >= other.getVectorSize(); i--) {
+        for (long long i = getVectorSize() - 1; i >= other.getVectorSize(); i--) {
             // Remove the bits of the z's
             uint32_t tmp = vector[i].getAval() - (vector[i].getAval() & vector[i].getBval());
             if (tmp != 0) return vec4state("1", 1);
         }
     }
     else if (getVectorSize() < other.getVectorSize()) {
-        for (int i = other.getVectorSize() - 1; i >= getVectorSize(); i--) {
+        for (long long i = other.getVectorSize() - 1; i >= getVectorSize(); i--) {
             // Remove the bits of the z's
             uint32_t tmp = other.vector[i].getAval() - (other.vector[i].getAval() & other.vector[i].getBval());
             if (tmp != 0) return vec4state("1", 1);
         }
     }
-    for (int i = min(getVectorSize(), other.getVectorSize()) - 1; i >= 0; i--) {
+    for (long long i = min(getVectorSize(), other.getVectorSize()) - 1; i >= 0; i--) {
         // Remove the bits of the z's
         uint32_t tmp1 = vector[i].getAval() - (vector[i].getAval() & vector[i].getBval());
         uint32_t tmp2 = other.vector[i].getAval() - (other.vector[i].getAval() & other.vector[i].getBval());
@@ -383,16 +391,16 @@ vec4state vec4state::operator!() const {
 vec4state vec4state::operator<(const vec4state& other) const {
     if (isUnknown() || other.isUnknown()) return vec4state("x", 1);
     if (getVectorSize() > other.getVectorSize()) {
-        for (int i = getVectorSize() - 1; i >= other.getVectorSize(); i--) {
+        for (long long i = getVectorSize() - 1; i >= other.getVectorSize(); i--) {
             if (vector[i].getAval() != 0) return vec4state("0", 1);
         }
     }
     else if (getVectorSize() < other.getVectorSize()) {
-        for (int i = other.getVectorSize() - 1; i >= getVectorSize(); i--) {
+        for (long long i = other.getVectorSize() - 1; i >= getVectorSize(); i--) {
             if (other.vector[i].getAval() != 0) return vec4state("1", 1);
         }
     }
-    for (int i = min(getVectorSize(), other.getVectorSize()) - 1; i >= 0; i--) {
+    for (long long i = min(getVectorSize(), other.getVectorSize()) - 1; i >= 0; i--) {
         if (vector[i].getAval() < other.vector[i].getAval()) return vec4state("1", 1);
         if (vector[i].getAval() > other.vector[i].getAval()) return vec4state("0", 1);
     }
@@ -432,19 +440,19 @@ vec4state vec4state::operator>=(long long num) const {
 
 /*********** For testing purposes ***********/
 
-size_t vec4state::getSize() const {
+long long vec4state::getSize() const {
     return size;
 }
 
 string vec4state::toString() const {
     string result;
-    for (int i = getVectorSize() - 1; i >= 0; i--) 
+    for (long long i = getVectorSize() - 1; i >= 0; i--) 
     {
         uint32_t currAval = vector[i].getAval();
         uint32_t currBval = vector[i].getBval();
         for (int j = 31; j >= 0; j--) 
         {
-            if (i == getVectorSize() - 1 && size % 32 != 0 && j > size % 32) continue;
+            if (i == getVectorSize() - 1 && size % 32 != 0 && j > (size % 32) - 1) continue;
             uint32_t mask = 1 << j;
             if ((currAval & mask) && (currBval & mask)) 
                 result += "z";

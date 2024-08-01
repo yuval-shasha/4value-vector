@@ -19,7 +19,7 @@ class VPI
         VPI(uint32_t a, uint32_t b) : a_val(a), b_val(b) {};
 
         // D'tor
-        ~VPI();
+        ~VPI() = default;
 
         // Getters and setters
         // Returns the a_val field of the VPI
