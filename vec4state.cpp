@@ -281,10 +281,7 @@ vec4state vec4state::caseInequality(const vec4state& other) const {
     return ~caseEquality(other);
 }
 
-vec4state vec4state::operator[](const long long index){
-    if (index >= size || index < 0) return vec4state("x", 1);
-    return this->getSlice(index, index);
-}
+
 
 vec4state vec4state::operator&&(const vec4state& other) const {
     int first = 0, second = 0;
@@ -382,6 +379,56 @@ vec4state vec4state::operator!() const {
     // If the vector has all bits set to 0
     return vec4state("1", 1);
 }
+
+vec4state vec4state::operator<(const vec4state& other) const {
+    if (isUnknown() || other.isUnknown()) return vec4state("x", 1);
+    if (getVectorSize() > other.getVectorSize()) {
+        for (int i = getVectorSize() - 1; i >= other.getVectorSize(); i--) {
+            if (vector[i].getAval() != 0) return vec4state("0", 1);
+        }
+    }
+    else if (getVectorSize() < other.getVectorSize()) {
+        for (int i = other.getVectorSize() - 1; i >= getVectorSize(); i--) {
+            if (other.vector[i].getAval() != 0) return vec4state("1", 1);
+        }
+    }
+    for (int i = min(getVectorSize(), other.getVectorSize()) - 1; i >= 0; i--) {
+        if (vector[i].getAval() < other.vector[i].getAval()) return vec4state("1", 1);
+        if (vector[i].getAval() > other.vector[i].getAval()) return vec4state("0", 1);
+    }
+
+    // If the vectors are equal
+    return vec4state("0", 1);
+}
+
+vec4state vec4state::operator<(long long num) const {
+    return *this < vec4state(num);
+}
+
+vec4state vec4state::operator>(const vec4state& other) const {
+    return other < *this;
+}
+
+vec4state vec4state::operator>(long long num) const {
+    return *this > vec4state(num);
+}
+
+vec4state vec4state::operator<=(const vec4state& other) const {
+    return ~(*this > other);
+}
+
+vec4state vec4state::operator<=(long long num) const {
+    return *this <= vec4state(num);
+}
+
+vec4state vec4state::operator>=(const vec4state& other) const {
+    return ~(*this < other);
+}
+
+vec4state vec4state::operator>=(long long num) const {
+    return *this >= vec4state(num);
+}
+
 
 /*********** For testing purposes ***********/
 
