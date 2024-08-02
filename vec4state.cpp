@@ -281,7 +281,91 @@ vec4state vec4state::caseInequality(const vec4state& other) const {
     return ~caseEquality(other);
 }
 
+vec4state vec4state::operator<<(const vec4state& other) {
+    if (other.isUnknown()) return vec4state("x", size);
+    for (int i = other.getVectorSize() - 1; i >= 2; i--) {
+        if (other.vector[i].getAval() != 0) return vec4state("0", size);
+    }
+    long long num = 0;
+    for (int i = 1; i >= 0; i--) {
+        num = num << 32;
+        num += other.vector[i].getAval();
+    }
+    if (num < 0) return vec4state("0", size);
+    return *this << num;
+}
 
+vec4state vec4state::operator<<(const long long num) {
+    if (num < 0) return vec4state("0", size);
+    if (num >= size) return vec4state("0", size);
+    vec4state res = *this;
+    int offset = num / 32;
+
+    // Shifting whole cells
+    for (int i = getVectorSize() - offset; i >= 0; i--)
+    {
+        res.vector[i + offset].setAval(vector[i].getAval());
+        res.vector[i + offset].setBval(vector[i].getBval());
+        res.vector[i].setAval(0);
+        res.vector[i].setBval(0);
+    }
+
+    // Shifting the remaining bits
+    for (int i = getVectorSize() - 1; i >= 0; i--)
+    {
+        res.vector[i].setAval(vector[i].getAval() << (num % 32));
+        res.vector[i].setBval(vector[i].getBval() << (num % 32));
+        if (i > 0)
+        {
+            res.vector[i].setAval(vector[i].getAval() | (vector[i - 1].getAval() >> (32 - (num % 32))));
+            res.vector[i].setBval(vector[i].getBval() | (vector[i - 1].getBval() >> (32 - (num % 32))));
+        }
+    }
+    return res;
+}
+
+vec4state vec4state::operator>>(const vec4state& other) {
+    if (other.isUnknown()) return vec4state("x", size);
+    for (int i = other.getVectorSize() - 1; i >= 2; i--) {
+        if (other.vector[i].getAval() != 0) return vec4state("0", size);
+    }
+    long long num = 0;
+    for (int i = 1; i >= 0; i--) {
+        num = num << 32;
+        num += other.vector[i].getAval();
+    }
+    if (num < 0) return vec4state("0", size);
+    return *this >> num;
+}
+
+vec4state vec4state::operator>>(const long long num) {
+    if (num < 0) return vec4state("0", size);
+    if (num >= size) return vec4state("0", size);
+    vec4state res = *this;
+    int offset = num / 32;
+    
+    // Shifting whole cells
+    for (int i = offset; i < getVectorSize(); i++)
+    {
+        res.vector[i - offset].setAval(vector[i].getAval());
+        res.vector[i - offset].setBval(vector[i].getBval());
+        res.vector[i].setAval(0);
+        res.vector[i].setBval(0);
+    }
+
+    // Shifting the remaining bits
+    for (int i = 0; i < getVectorSize(); i++)
+    {
+        res.vector[i].setAval(vector[i].getAval() >> (num % 32));
+        res.vector[i].setBval(vector[i].getBval() >> (num % 32));
+        if (i < getVectorSize() - 1)
+        {
+            res.vector[i].setAval(vector[i].getAval() | (vector[i + 1].getAval() << (32 - (num % 32))));
+            res.vector[i].setBval(vector[i].getBval() | (vector[i + 1].getBval() << (32 - (num % 32))));
+        }
+    }
+    return res;
+}
 
 vec4state vec4state::operator&&(const vec4state& other) const {
     int first = 0, second = 0;
