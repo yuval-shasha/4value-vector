@@ -13,12 +13,14 @@ class vec4state
         // The 4 value vector consists of an array of VPI elements, where each element is 32 bits long that can be either 0, 1, x, or z. The first element is the least significant 32 bits.
         VPI* vector;
         // Size is the number of bits in the vector
-        size_t size;
+        long long size;
 
+        // Initializes a vector of size "size" (greater than 0) that contains str (of length 1) repeated size times. 
+        vec4state(string str, long long size);
         // Returns true if the vector contains x or z, otherwise returns false
         bool isUnknown() const;
         // Returns the number of VPI elements in the vector
-        size_t getVectorSize() const;
+        long long getVectorSize() const;
 
     public:
         // C'tors
@@ -30,8 +32,6 @@ class vec4state
         vec4state(long long num);
         // Initializes a vector of size str.length with the value of str
         vec4state(string str);
-        // Initializes a vector of size "size" that contains str (of length 1) repeated size times. 
-        vec4state(string str, size_t size);
         // Copy c'tor
         vec4state(const vec4state& other);
 
@@ -118,7 +118,7 @@ class vec4state
 
         /*********** For testing purposes ***********/
         // Returns the size of the vector.
-        size_t getSize() const;
+        long long getSize() const;
         // Returns a string representation of the vector.
         string toString() const;
 };

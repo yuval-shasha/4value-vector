@@ -18,6 +18,7 @@ enable_testing()
 set(SOURCE_FILES
   vec4state.cpp
   vec4state.h
+  vpi.h
 )
 
 add_executable(
