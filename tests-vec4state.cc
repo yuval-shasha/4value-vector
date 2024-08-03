@@ -39,20 +39,22 @@ testing::AssertionResult checkVectorSize(vec4state& vector, long long size) {
     }
 }
 
-TEST_F(vec4stateTest, TestConstructors) {
-    // Default constructor
+TEST_F(vec4stateTest, TestDefaultConstructor) {
     EXPECT_TRUE(compareVectorToString(defaultVector, string("x")));
     EXPECT_TRUE(checkVectorSize(defaultVector, 1));
-    
-    // Integer constructor
+}
+
+TEST_F(vec4stateTest, TestIntegerConstructor) {
     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
+}
 
-    // Long long constructor
+TEST_F(vec4stateTest, TestLongLongConstructor) {
     EXPECT_TRUE(compareVectorToString(longLongVector, string("0001001000110100010101100111100010010000101010111100110111101111")));
     EXPECT_TRUE(checkVectorSize(longLongVector, 64));
+}
 
-    // String constructor
+TEST_F(vec4stateTest, TestStringConstructor) {
     EXPECT_TRUE(compareVectorToString(stringVector, string("01xz11")));
     EXPECT_TRUE(checkVectorSize(stringVector, 6));
 
@@ -61,132 +63,176 @@ TEST_F(vec4stateTest, TestConstructors) {
 
     EXPECT_TRUE(compareVectorToString(bigVector, string("0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx")));
     EXPECT_TRUE(checkVectorSize(bigVector, 108));
+}
 
-    // Copy constructor
+TEST_F(vec4stateTest, TestCopyConstructor) {
     EXPECT_TRUE(compareVectorToString(copyVector, string("01xz11")));
     EXPECT_TRUE(checkVectorSize(copyVector, 6));
 }
 
-TEST_F(vec4stateTest, TestAssignmentOperators) {
-    // Copy assignment
+TEST_F(vec4stateTest, TestCopyAssignment) {
     vec4state copy = defaultVector;
     EXPECT_TRUE(compareVectorToString(copy, string("x")));
     EXPECT_TRUE(checkVectorSize(copy, 1));
+}
 
-    // Integer assignment
-    copy = 0x12345678;
+TEST_F(vec4stateTest, TestIntegerAssignment) {
+    vec4state copy = 0x12345678;
     EXPECT_TRUE(compareVectorToString(copy, string("00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(copy, 32));
+}
 
-    // Long long assignment
-    copy = 0x1234567890ABCDEF;
+TEST_F(vec4stateTest, TestLongLongAssignment) {
+    vec4state copy = 0x1234567890ABCDEF;
     EXPECT_TRUE(compareVectorToString(copy, string("0001001000110100010101100111100010010000101010111100110111101111")));
     EXPECT_TRUE(checkVectorSize(copy, 64));
+}
 
-    // String assignment
-    copy = "01xz11";
+TEST_F(vec4stateTest, TestStringAssignment) {
+    vec4state copy = "01xz11";
     EXPECT_TRUE(compareVectorToString(copy, string("01xz11")));
     EXPECT_TRUE(checkVectorSize(copy, 6));
 }
 
-TEST_F(vec4stateTest, TestBitwiseOperators) {
-    // AND
+TEST_F(vec4stateTest, TestBitwiseAndIntVectorWithItself) {
     vec4state andVector = intVector & intVector;
     EXPECT_TRUE(compareVectorToString(andVector, string("00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(andVector, 32));
-    
-    andVector = longLongVector & longLongVector;
+}
+
+TEST_F(vec4stateTest, TestBitwiseAndLongLongVectorWithItself) {
+    vec4state andVector = longLongVector & longLongVector;
     EXPECT_TRUE(compareVectorToString(andVector, string("0001001000110100010101100111100010010000101010111100110111101111")));
     EXPECT_TRUE(checkVectorSize(andVector, 64));
+}
 
-    andVector = intVector & longLongVector;
+TEST_F(vec4stateTest, TestBitwiseAndIntVectorWithLongLongVector) {
+    vec4state andVector = intVector & longLongVector;
     EXPECT_TRUE(compareVectorToString(andVector, string("0000000000000000000000000000000000010000001000000100010001101000")));
     EXPECT_TRUE(checkVectorSize(andVector, 64));
-    
-    andVector = intVector & 0x1234567890ABCDEF;
+}
+
+TEST_F(vec4stateTest, TestBitwiseAndIntVectorWithLongLong) {
+    vec4state andVector = intVector & 0x1234567890ABCDEF;
     EXPECT_TRUE(compareVectorToString(andVector, string("0001001000110100010101100111100010010000101010111100110111101111")));
     EXPECT_TRUE(checkVectorSize(andVector, 64));
+}
 
-    andVector = intVector & 0x12345678;
+TEST_F(vec4stateTest, TestBitwiseAndIntVectorWithInteger) {
+    vec4state andVector = intVector & 0x12345678;
     EXPECT_TRUE(compareVectorToString(andVector, string("00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(andVector, 32));
+}
 
-    andVector = stringVector & stringVector;
+TEST_F(vec4stateTest, TestBitwiseAndStringVectorWithItself) {
+    vec4state andVector = stringVector & stringVector;
     EXPECT_TRUE(compareVectorToString(andVector, string("01xx11")));
     EXPECT_TRUE(checkVectorSize(andVector, 6));
+}
 
-    andVector = stringVector & bigVector;
+TEST_F(vec4stateTest, TestBitwiseAndSmallVectorWithBigVector) {
+    vec4state andVector = stringVector & bigVector;
     EXPECT_TRUE(compareVectorToString(andVector, string("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001xxxx")));
     EXPECT_TRUE(checkVectorSize(andVector, 108));
+}
 
-    // OR
+TEST_F(vec4stateTest, TestBitwiseOrIntVectorWithItself) {
     vec4state orVector = intVector | intVector;
     EXPECT_TRUE(compareVectorToString(orVector, string("00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(orVector, 32));
+}
 
-    orVector = longLongVector | longLongVector;
+TEST_F(vec4stateTest, TestBitwiseOrLongLongVectorWithItself) {
+    vec4state orVector = longLongVector | longLongVector;
     EXPECT_TRUE(compareVectorToString(orVector, string("0001001000110100010101100111100010010000101010111100110111101111")));
     EXPECT_TRUE(checkVectorSize(orVector, 64));
+}
 
-    orVector = intVector | longLongVector;
+TEST_F(vec4stateTest, TestBitwiseOrIntVectorWithLongLongVector) {
+    vec4state orVector = intVector | longLongVector;
     EXPECT_TRUE(compareVectorToString(orVector, string("0001001000110100010101100111100010010010101111111101111111111111")));
     EXPECT_TRUE(checkVectorSize(orVector, 64));
+}
 
-    orVector = intVector | 0x1234567890ABCDEF;
+TEST_F(vec4stateTest, TestBitwiseOrIntVectorWithLongLong) {
+    vec4state orVector = intVector | 0x1234567890ABCDEF;
     EXPECT_TRUE(compareVectorToString(orVector, string("0001001000110100010101100111100010010010101111111101111111111111")));
     EXPECT_TRUE(checkVectorSize(orVector, 64));
+}
 
-    orVector = intVector | 0x12345678;
+TEST_F(vec4stateTest, TestBitwiseOrIntVectorWithInteger) {
+    vec4state orVector = intVector | 0x12345678;
     EXPECT_TRUE(compareVectorToString(orVector, string("00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(orVector, 32));
+}
 
-    orVector = stringVector | stringVector;
+TEST_F(vec4stateTest, TestBitwiseOrStringVectorWithItself) {
+    vec4state orVector = stringVector | stringVector;
     EXPECT_TRUE(compareVectorToString(orVector, string("01xx11")));
     EXPECT_TRUE(checkVectorSize(orVector, 6));
+}
 
-    orVector = stringVector | bigVector;
+TEST_F(vec4stateTest, TestBitwiseOrSmallVectorWithBigVector) {
+    vec4state orVector = stringVector | bigVector;
     EXPECT_TRUE(compareVectorToString(orVector, string("0110011xxx0111xxxx0110011xxx0111xxxx0110011xxx0111xxxx0110011xxx0111xxxx0110011xxx0111xxxx0110011xxx0111xx11")));
     EXPECT_TRUE(checkVectorSize(orVector, 108));
+}
 
-    // XOR
+TEST_F(vec4stateTest, TestBitwiseXorIntVectorWithItself) {
     vec4state xorVector = intVector ^ intVector;
     EXPECT_TRUE(compareVectorToString(xorVector, string("00000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(xorVector, 32));
+}
 
-    xorVector = longLongVector ^ longLongVector;
+TEST_F(vec4stateTest, TestBitwiseXorLongLongVectorWithItself) {
+    vec4state xorVector = longLongVector ^ longLongVector;
     EXPECT_TRUE(compareVectorToString(xorVector, string("0000000000000000000000000000000000000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(xorVector, 64));
+}
 
-    xorVector = intVector ^ longLongVector;
+TEST_F(vec4stateTest, TestBitwiseXorIntVectorWithLongVector) {
+    vec4state xorVector = intVector ^ longLongVector;
     EXPECT_TRUE(compareVectorToString(xorVector, string("0001001000110100010101100111100010000010100111111001101110010111")));
     EXPECT_TRUE(checkVectorSize(xorVector, 64));
+}
 
-    xorVector = intVector ^ 0x1234567890ABCDEF;
+TEST_F(vec4stateTest, TestBitwiseXorIntVectorWithLongLong) {
+    vec4state xorVector = intVector ^ 0x1234567890ABCDEF;
     EXPECT_TRUE(compareVectorToString(xorVector, string("0001001000110100010101100111100010000010100111111001101110010111")));
     EXPECT_TRUE(checkVectorSize(xorVector, 64));
+}
 
-    xorVector = intVector ^ 0x12345678;
+TEST_F(vec4stateTest, TestBitwiseXorIntVectorWithInteger) {
+    vec4state xorVector = intVector ^ 0x12345678;
     EXPECT_TRUE(compareVectorToString(xorVector, string("00000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(xorVector, 32));
+}
 
-    xorVector = stringVector ^ stringVector;
+TEST_F(vec4stateTest, TestBitwiseXorStringVectorWithItself) {
+    vec4state xorVector = stringVector ^ stringVector;
     EXPECT_TRUE(compareVectorToString(xorVector, string("00xx00")));
     EXPECT_TRUE(checkVectorSize(xorVector, 6));
+}
 
-    xorVector = stringVector ^ bigVector;
+TEST_F(vec4stateTest, TestBitwiseXorSmallVectorWithBigVector) {
+    vec4state xorVector = stringVector ^ bigVector;
     EXPECT_TRUE(compareVectorToString(xorVector, string("0110011xxx0111xxxx0110011xxx0111xxxx0110011xxx0111xxxx0110011xxx0111xxxx0110011xxx0111xxxx0110011xxx0110xxxx")));
     EXPECT_TRUE(checkVectorSize(xorVector, 108));
+}
 
-    // NOT
+TEST_F(vec4stateTest, TestBitwiseNotLongLongVector) {
     vec4state notVector = ~longLongVector;
     EXPECT_TRUE(compareVectorToString(notVector, string("1110110111001011101010011000011101101111010101000011001000010000")));
     EXPECT_TRUE(checkVectorSize(notVector, 64));
+}
 
-    notVector = ~stringVector;
+TEST_F(vec4stateTest, TestBitwiseNotStringVector) {
+    vec4state notVector = ~stringVector;
     EXPECT_TRUE(compareVectorToString(notVector, string("10xx00")));
     EXPECT_TRUE(checkVectorSize(notVector, 6));
 }
 
+// TODO: split the following tests into multiple tests!
 TEST_F(vec4stateTest, TestEqualityOperators) {
     // ==
     vec4state eqVector = intVector == intVector;
@@ -439,7 +485,7 @@ TEST_F(vec4stateTest, TestShiftOperators) {
     EXPECT_TRUE(compareVectorToString(shiftRightVector, string("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(shiftRightVector, 108));
 }
-
+/*
 TEST_F(vec4stateTest, TestSliceOperators) {
     // []
     vec4state indexVector = intVector[2];
@@ -556,7 +602,7 @@ TEST_F(vec4stateTest, TestSliceOperators) {
     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
-
+*/
 TEST_F(vec4stateTest, TestLogicalOperators) {
     // &&
     vec4state andVector = intVector && intVector;

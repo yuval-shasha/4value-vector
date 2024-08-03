@@ -15,6 +15,22 @@ long long vec4state::getVectorSize() const {
     return (size + 31) / 32;
 }
 
+void vec4state::resize(long long newSize) {
+    if (newSize <= size) return;
+    long long oldSize = size;
+    size = newSize;
+    VPI* newVector = new VPI[getVectorSize()];
+    for (long long i = 0; i < getVectorSize(); i++) {
+        if (i < oldSize) newVector[i] = vector[i];
+        else {
+            newVector[i].setAval(0);
+            newVector[i].setBval(0);
+        }
+    }
+    delete[] vector;
+    vector = newVector;
+}
+
 vec4state::vec4state() : vector(nullptr)
 {
     vector = new VPI[1];
@@ -182,28 +198,24 @@ vec4state vec4state::operator&(long long num) const {
 }
 
 vec4state vec4state::operator|(const vec4state& other) const {
-    // TODO: Create a method that converts a vector to another vector of a different size. Then use it here where needed.
     vec4state copy_this = *this;
     vec4state copy_other = other;
-    vec4state result;
+    long long biggerVectorSize = max(getVectorSize(), other.getVectorSize());
+    vec4state result = vec4state("0", biggerVectorSize * 32);
+    if (getVectorSize() < biggerVectorSize) copy_this.resize(biggerVectorSize * 32);
+    if (other.getVectorSize() < biggerVectorSize) copy_other.resize(biggerVectorSize * 32);
 
-    // For copy_this: a_val = a_val - (a_val & b_val)
-    for (int i = 0; i < getVectorSize(); i++) {
+    for (long long i = 0; i < biggerVectorSize; i++) {
         copy_this.vector[i].setAval(copy_this.vector[i].getAval() - (copy_this.vector[i].getAval() & copy_this.vector[i].getBval()));
-    }
-    // For copy_other: a_val = a_val - (a_val & b_val)
-    for (int i = 0; i < other.getVectorSize(); i++) {
         copy_other.vector[i].setAval(copy_other.vector[i].getAval() - (copy_other.vector[i].getAval() & copy_other.vector[i].getBval()));
     }
     
-    for (int i = 0; i < min(getVectorSize(), other.getVectorSize()); i++) {
+    for (long long i = 0; i < biggerVectorSize; i++) {
         copy_this.vector[i].setBval(copy_this.vector[i].getBval() - (copy_other.vector[i].getAval() & copy_this.vector[i].getBval()));
         copy_other.vector[i].setBval(copy_other.vector[i].getBval() - (copy_this.vector[i].getAval() & copy_other.vector[i].getBval()));
     }
     
-    if (getVectorSize() > other.getVectorSize()) result = copy_this;
-    else result = copy_other;
-    for (int i = 0; i < min(getVectorSize(), other.getVectorSize()); i++) {
+    for (long long i = 0; i < biggerVectorSize; i++) {
         result.vector[i].setAval(copy_this.vector[i].getAval() | copy_other.vector[i].getAval());
         result.vector[i].setBval(copy_this.vector[i].getBval() | copy_other.vector[i].getBval());
     }

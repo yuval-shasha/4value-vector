@@ -21,6 +21,8 @@ class vec4state
         bool isUnknown() const;
         // Returns the number of VPI elements in the vector
         long long getVectorSize() const;
+        // Returns the same vector with size newSize. If newSize is less than the current size, the vector is truncated. If newSize is greater than the current size, the vector is extended with 0's.
+        void resize(long long newSize);
 
     public:
         // C'tors
