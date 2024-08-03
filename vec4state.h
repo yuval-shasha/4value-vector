@@ -60,8 +60,10 @@ class vec4state
         vec4state operator!=(long long num) const;
         // Checks if the vector is equal to other, including x's and z's. Returns a vector of 1's if true and 0's otherwise.
         vec4state caseEquality(const vec4state& other) const;
+        vec4state caseEquality(long long num) const;
         // Checks if the vector is not equal to other, including x's and z's. Returns a vector of 1's if true and 0's otherwise.
         vec4state caseInequality(const vec4state& other) const;
+        vec4state caseInequality(long long num) const;
 
         // Shift operators
         // If other contains x or z, returns a vector that is all x's.
@@ -71,13 +73,15 @@ class vec4state
         vec4state operator>>(const vec4state& other);
         vec4state operator>>(const long long num);
 
-        // Slice methods
+        // Slice operators
         vec4state operator[](const vec4state& index);
         vec4state operator[](const long long index);
         // Returns a vector that is a slice of the original vector from start to end.
         vec4state getSlice(long long end, long long start);
         // Sets the slice of the original vector from start to end to the value of other.
         void setSlice(long long end, long long start, const vec4state& other);
+        void setSlice(long long end, long long start, long long num);
+        void setSlice(long long end, long long start, string str);
 
         // Logical operators
         vec4state operator&&(const vec4state& other) const;

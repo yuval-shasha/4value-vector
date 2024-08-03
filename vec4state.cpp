@@ -286,8 +286,16 @@ vec4state vec4state::caseEquality(const vec4state& other) const {
     return vec4state("1", 1);
 }
 
+vec4state vec4state::caseEquality(long long num) const {
+    return caseEquality(vec4state(num));
+}
+
 vec4state vec4state::caseInequality(const vec4state& other) const {
     return ~caseEquality(other);
+}
+
+vec4state vec4state::caseInequality(long long num) const {
+    return caseInequality(vec4state(num));
 }
 
 vec4state vec4state::operator<<(const vec4state& other) {
