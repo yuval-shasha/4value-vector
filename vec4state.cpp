@@ -190,7 +190,11 @@ vec4state& vec4state::operator=(string str) {
 }
 
 vec4state vec4state::operator&(const vec4state& other) const {
-    return ~(~*this | ~other);
+    vec4state copy_this = *this;
+    vec4state copy_other = other;
+    copy_this.resize(max(getSize(), other.getSize()));
+    copy_other.resize(max(getSize(), other.getSize()));
+    return ~(~copy_this | ~copy_other);
 }
 
 vec4state vec4state::operator&(long long num) const {
@@ -235,7 +239,11 @@ vec4state vec4state::operator|(int num) const {
 }
 
 vec4state vec4state::operator^(const vec4state& other) const {
-    return (*this & ~other) | (~*this & other);
+    vec4state copy_this = *this;
+    vec4state copy_other = other;
+    copy_this.resize(max(getSize(), other.getSize()));
+    copy_other.resize(max(getSize(), other.getSize()));
+    return (copy_this & ~copy_other) | (~copy_this & copy_other);
 }
 
 vec4state vec4state::operator^(long long num) const {

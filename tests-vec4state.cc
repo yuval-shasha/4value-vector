@@ -366,7 +366,7 @@ TEST_F(vec4stateTest, TestIntVectorInequalityWithInteger) {
 
 TEST_F(vec4stateTest, TestIntVectorInequalityWithLongLong) {
     vec4state neqVector = intVector != 0x1234567890ABCDEF;
-    EXPECT_TRUE(compareVectorToString(neqVector, string("0")));
+    EXPECT_TRUE(compareVectorToString(neqVector, string("1")));
     EXPECT_TRUE(checkVectorSize(neqVector, 1));
 }
 
