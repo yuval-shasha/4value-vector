@@ -49,10 +49,13 @@ class vec4state
         // Bitwise operators
         vec4state operator&(const vec4state& other) const;
         vec4state operator&(long long num) const;
+        vec4state operator&(int num) const;
         vec4state operator|(const vec4state& other) const;
         vec4state operator|(long long num) const;
+        vec4state operator|(int num) const;
         vec4state operator^(const vec4state& other) const;
         vec4state operator^(long long num) const;
+        vec4state operator^(int num) const;
         vec4state operator~() const;
 
         // Equality operators

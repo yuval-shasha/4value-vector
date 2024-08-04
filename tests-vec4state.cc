@@ -11,6 +11,7 @@ protected:
     vec4state copyVector = vec4state(stringVector);
     vec4state bigVector = vec4state("0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx");
     vec4state onesVector = vec4state("11");
+    vec4state xThenOnesVector = vec4state("x11");
     vec4state xVector = vec4state("xx");
     vec4state zVector = vec4state("zz");
     vec4state xzVector = vec4state("xz");
@@ -19,6 +20,7 @@ protected:
     vec4state zeroAndXVector = vec4state("0x");
     vec4state zeroAndZVector = vec4state("0z");
     vec4state zeroesVector = vec4state("00");
+    vec4state zThenZeroesVector = vec4state("z00");
 };
 
 // Compares the string representation of the vector with the given string.
@@ -114,7 +116,7 @@ TEST_F(vec4stateTest, TestBitwiseAndIntVectorWithLongLongVector) {
 
 TEST_F(vec4stateTest, TestBitwiseAndIntVectorWithLongLong) {
     vec4state andVector = intVector & 0x1234567890ABCDEF;
-    EXPECT_TRUE(compareVectorToString(andVector, string("0001001000110100010101100111100010010000101010111100110111101111")));
+    EXPECT_TRUE(compareVectorToString(andVector, string("0000000000000000000000000000000000010000001000000100010001101000")));
     EXPECT_TRUE(checkVectorSize(andVector, 64));
 }
 
@@ -190,7 +192,7 @@ TEST_F(vec4stateTest, TestBitwiseXorLongLongVectorWithItself) {
     EXPECT_TRUE(checkVectorSize(xorVector, 64));
 }
 
-TEST_F(vec4stateTest, TestBitwiseXorIntVectorWithLongVector) {
+TEST_F(vec4stateTest, TestBitwiseXorIntVectorWithLongLongVector) {
     vec4state xorVector = intVector ^ longLongVector;
     EXPECT_TRUE(compareVectorToString(xorVector, string("0001001000110100010101100111100010000010100111111001101110010111")));
     EXPECT_TRUE(checkVectorSize(xorVector, 64));
@@ -334,6 +336,18 @@ TEST_F(vec4stateTest, TestOnesVectorEqualityWithZeroAndZVector) {
 
 TEST_F(vec4stateTest, TestXVectorEqualityWithZVector) {
     vec4state eqVector = xVector == zVector;
+    EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
+    EXPECT_TRUE(checkVectorSize(eqVector, 1));
+}
+
+TEST_F(vec4stateTest, TestOnesVectorEqualityWithXThenOnesVector) {
+    vec4state eqVector = onesVector == xThenOnesVector;
+    EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
+    EXPECT_TRUE(checkVectorSize(eqVector, 1));
+}
+
+TEST_F(vec4stateTest, TestZeroesVectorEqualityWithZThenZeroesVector) {
+    vec4state eqVector = zeroesVector == zThenZeroesVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
 }

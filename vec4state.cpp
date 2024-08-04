@@ -17,7 +17,7 @@ long long vec4state::getVectorSize() const {
 
 void vec4state::resize(long long newSize) {
     if (newSize <= size) return;
-    long long oldSize = size;
+    long long oldSize = getVectorSize();
     size = newSize;
     VPI* newVector = new VPI[getVectorSize()];
     for (long long i = 0; i < getVectorSize(); i++) {
@@ -197,13 +197,17 @@ vec4state vec4state::operator&(long long num) const {
     return *this & vec4state(num);
 }
 
+vec4state vec4state::operator&(int num) const {
+    return *this & vec4state(num);
+}
+
 vec4state vec4state::operator|(const vec4state& other) const {
     vec4state copy_this = *this;
     vec4state copy_other = other;
     long long biggerVectorSize = max(getVectorSize(), other.getVectorSize());
-    vec4state result = vec4state("0", biggerVectorSize * 32);
-    if (getVectorSize() < biggerVectorSize) copy_this.resize(biggerVectorSize * 32);
-    if (other.getVectorSize() < biggerVectorSize) copy_other.resize(biggerVectorSize * 32);
+    vec4state result = vec4state("0", max(getSize(), other.getSize()));
+    copy_this.resize(max(getSize(), other.getSize()));
+    copy_other.resize(max(getSize(), other.getSize()));
 
     for (long long i = 0; i < biggerVectorSize; i++) {
         copy_this.vector[i].setAval(copy_this.vector[i].getAval() - (copy_this.vector[i].getAval() & copy_this.vector[i].getBval()));
@@ -226,11 +230,19 @@ vec4state vec4state::operator|(long long num) const {
     return *this | vec4state(num);
 }
 
+vec4state vec4state::operator|(int num) const {
+    return *this | vec4state(num);
+}
+
 vec4state vec4state::operator^(const vec4state& other) const {
     return (*this & ~other) | (~*this & other);
 }
 
 vec4state vec4state::operator^(long long num) const {
+    return *this ^ vec4state(num);
+}
+
+vec4state vec4state::operator^(int num) const {
     return *this ^ vec4state(num);
 }
 
@@ -243,24 +255,10 @@ vec4state vec4state::operator~() const {
 }
 
 vec4state vec4state::operator==(const vec4state& other) const {
-    if (isUnknown() || other.isUnknown()) return vec4state("x", 1);
-    
-    for (int i = 0; i < min(getVectorSize(), other.getVectorSize()); i++) {
-        if (vector[i].getAval() != other.vector[i].getAval())
-            return vec4state("0", 1);
-    }
-
-    // If the vectors are of different sizes, check if the larger vector has any bits set to 1
-    if (getVectorSize() > other.getVectorSize()) {
-        for (long long i = other.getVectorSize(); i < getVectorSize(); i++) {
-            if (vector[i].getAval() != 0)
-                return vec4state("0", 1);
-        }
-    } else if (getVectorSize() < other.getVectorSize()) {
-        for (long long i = getVectorSize(); i < other.getVectorSize(); i++) {
-            if (other.vector[i].getAval() != 0)
-                return vec4state("0", 1);
-        }
+    vec4state xorVector = *this ^ other;
+    for (long long i = 0; i < xorVector.getVectorSize(); i++) {
+        if (xorVector.vector[i].getAval() != 0) return vec4state("0", 1);
+        if (xorVector.vector[i].getBval() != 0) return vec4state("x", 1);
     }
     return vec4state("1", 1);
 }
@@ -331,14 +329,15 @@ vec4state vec4state::operator<<(const long long num) {
     long long offset = num / 32;
 
     // Shifting whole cells
-    for (long long i = getVectorSize() - offset; i >= 0; i--)
-    {
-        res.vector[i + offset].setAval(vector[i].getAval());
-        res.vector[i + offset].setBval(vector[i].getBval());
-        res.vector[i].setAval(0);
-        res.vector[i].setBval(0);
+    if (offset > 0) {
+        for (long long i = getVectorSize() - offset - 1; i >= 0; i--)
+        {
+            res.vector[i + offset].setAval(vector[i].getAval());
+            res.vector[i + offset].setBval(vector[i].getBval());
+            res.vector[i].setAval(0);
+            res.vector[i].setBval(0);
+        }
     }
-
     // Shifting the remaining bits
     for (long long i = getVectorSize() - 1; i >= 0; i--)
     {
