@@ -15,7 +15,7 @@ long long vec4state::getVectorSize() const {
     return (size + 31) / 32;
 }
 
-void vec4state::resize(long long newSize) {
+void vec4state::incSize(long long newSize) {
     if (newSize <= size) return;
     long long oldSize = getVectorSize();
     size = newSize;
@@ -29,6 +29,20 @@ void vec4state::resize(long long newSize) {
     }
     delete[] vector;
     vector = newVector;
+}
+
+bool vec4state::isTrue() const {
+    if (size == 1 && vector[0].getAval() == 1 && vector[0].getBval() == 0) return true;
+    else return false;
+}
+
+long long vec4state::vecToLongLong() const {
+    long long result = 0;
+    for (int i = 0; i < 2; i++) {
+        result = result << 32;
+        result += vector[i].getAval();
+    }
+    return result;
 }
 
 vec4state::vec4state() : vector(nullptr)
@@ -192,8 +206,8 @@ vec4state& vec4state::operator=(string str) {
 vec4state vec4state::operator&(const vec4state& other) const {
     vec4state copy_this = *this;
     vec4state copy_other = other;
-    copy_this.resize(max(getSize(), other.getSize()));
-    copy_other.resize(max(getSize(), other.getSize()));
+    copy_this.incSize(max(getSize(), other.getSize()));
+    copy_other.incSize(max(getSize(), other.getSize()));
     return ~(~copy_this | ~copy_other);
 }
 
@@ -210,8 +224,8 @@ vec4state vec4state::operator|(const vec4state& other) const {
     vec4state copy_other = other;
     long long biggerVectorSize = max(getVectorSize(), other.getVectorSize());
     vec4state result = vec4state("0", max(getSize(), other.getSize()));
-    copy_this.resize(max(getSize(), other.getSize()));
-    copy_other.resize(max(getSize(), other.getSize()));
+    copy_this.incSize(max(getSize(), other.getSize()));
+    copy_other.incSize(max(getSize(), other.getSize()));
 
     for (long long i = 0; i < biggerVectorSize; i++) {
         copy_this.vector[i].setAval(copy_this.vector[i].getAval() - (copy_this.vector[i].getAval() & copy_this.vector[i].getBval()));
@@ -241,8 +255,8 @@ vec4state vec4state::operator|(int num) const {
 vec4state vec4state::operator^(const vec4state& other) const {
     vec4state copy_this = *this;
     vec4state copy_other = other;
-    copy_this.resize(max(getSize(), other.getSize()));
-    copy_other.resize(max(getSize(), other.getSize()));
+    copy_this.incSize(max(getSize(), other.getSize()));
+    copy_other.incSize(max(getSize(), other.getSize()));
     return (copy_this & ~copy_other) | (~copy_this & copy_other);
 }
 
@@ -401,6 +415,112 @@ vec4state vec4state::operator>>(const long long num) {
         }
     }
     return res;
+}
+
+vec4state& vec4state::operator[](const vec4state& index) {
+    if (index.isUnknown() || (index > vec4state(size)).isTrue() || (index < 0).isTrue()) {
+        return vec4state("x", 1);
+    }
+    else {
+        return getSlice(index.vecToLongLong(), index.vecToLongLong());
+    }
+}
+
+vec4state& vec4state::operator[](const long long index) {
+    return (*this)[vec4state(index)];
+}
+
+vec4state vec4state::bitwiseAndAvalBval(const vec4state& other) const {
+    vec4state copy_this = *this;
+    vec4state copy_other = other;
+    long long maxSize = max(getSize(), other.getSize());
+    copy_this.incSize(maxSize);
+    copy_other.incSize(maxSize);
+    vec4state result = vec4state("0", maxSize);
+    for (int i = 0; i < result.getVectorSize(); i++) {
+        result.vector[i].setAval(result.vector[i].getAval() & other.vector[i].getAval());
+        result.vector[i].setBval(result.vector[i].getBval() & other.vector[i].getBval());
+    }
+    return result;
+}
+
+vec4state& vec4state::getSlice(long long end, long long start) {
+    // If input is invalid.
+    if (end < start) return vec4state("x", 1);
+    vec4state result = vec4state("x", end - start + 1);
+    // If the slice is completely out of bounds.
+    if (end < 0 || start >= size) return result;
+
+    vec4state tmp = *this;
+    if (start >= 0) {
+        // Move the bits to the right if the slice starts after index 0.
+        tmp = tmp >> start;
+    }
+    // Mask the bits that are in the slice.
+    for (long long i = 0; i < (end - start + 1) / 32; i++) {
+        result.vector[i].setAval(0xFFFFFFFF);
+        result.vector[i].setBval(0xFFFFFFFF);
+    }
+    if ((end - start + 1) % 32 != 0) {
+        result.vector[((end - start + 1) / 32) + 1].setAval(pow(2, (end % 32) + 1) - 1);
+        result.vector[((end - start + 1) / 32) + 1].setBval(pow(2, (end % 32) + 1) - 1);
+    }
+    // Extract the relevant bits from the vector.
+    result = result.bitwiseAndAvalBval(tmp);
+    if (start < 0) {
+        // Move the bits to the left if the slice starts becfore index 0.
+        result = result << -start;
+        // Put x's where the index is less than 0.
+        for (long long i = 0; i < -start / 32; i++) result.vector[i].setBval(0xFFFFFFFF);
+        if (-start % 32 != 0) result.vector[-start / 32].setBval(pow(2, -start % 32) - 1 + result.vector[-start / 32].getBval());
+    } 
+    return result;
+}
+
+vec4state vec4state::AdditionAvalBval(const vec4state& other) const {
+    vec4state copy_this = *this;
+    vec4state copy_other = other;
+    long long maxSize = max(getSize(), other.getSize());
+    copy_this.incSize(maxSize);
+    copy_other.incSize(maxSize);
+    vec4state result = vec4state("0", maxSize);
+    for (int i = 0; i < result.getVectorSize(); i++) {
+        result.vector[i].setAval(result.vector[i].getAval() + other.vector[i].getAval());
+        result.vector[i].setBval(result.vector[i].getBval() + other.vector[i].getBval());
+    }
+    return result;
+}
+
+vec4state vec4state::resize(long long newSize) const {
+    // TODO: Implement this function.
+}
+
+void vec4state::setSlice(long long end, long long start, const vec4state& other) {
+    if (start <= end && end < size && start >= 0) {
+        start = max(start, long long(0));
+        end = min(end, size - 1);
+        // Adjust the size of other to the size of the slice.
+        vec4state other_copy = other;
+        other_copy.resize(end - start);
+        // Save the bits before the slice.
+        vec4state beforeStart = getSlice(start, 0);
+        // Zero down the bits in the slice.
+        *this = *this >> end;
+        *this = *this << end - start;
+        // Insert the bits of other into the slice.
+        *this = AdditionAvalBval(other);
+        // Move the starting bits back to their original position.
+        *this = *this << start;
+        *this = AdditionAvalBval(beforeStart);
+    }
+}
+
+void vec4state::setSlice(long long end, long long start, long long num) {
+    setSlice(end, start, vec4state(num));
+}
+
+void vec4state::setSlice(long long end, long long start, string str) {
+    setSlice(end, start, vec4state(str));
 }
 
 vec4state vec4state::operator&&(const vec4state& other) const {
