@@ -21,8 +21,10 @@ class vec4state
         bool isUnknown() const;
         // Returns the number of VPI elements in the vector
         long long getVectorSize() const;
-        // Returns the same vector with size newSize. If newSize is less than the current size, the vector is truncated. If newSize is greater than the current size, the vector is extended with 0's.
+        // Returns the same vector with size newSize. If newSize is greater than the current size, the vector is extended with 0's.
         void incSize(long long newSize);
+        // Returns the same vector with size newSize. If newSize is less than the current size, the vector is truncated.
+        void decSize(long long newSize);
         // Returns true if the vector is equal to "1", otherwise returns false
         bool isTrue() const;
         // Returns the value of the vector as a long long, use only if the vector has only 2 VPIs (for slicing).
@@ -31,7 +33,7 @@ class vec4state
         vec4state bitwiseAndAvalBval(const vec4state& other) const;
         // Returns a vector which it's aval is the result of the addition of the aval of the vector and the aval of other, and it's bval is the result of the addition of the bval of the vector and the bval of other.
         vec4state AdditionAvalBval(const vec4state& other) const;
-        // Returns a vector which it's aval and bval are cut/extended to the size of newSize.
+        // Returns a vector which it's aval and bval are truncated/extended to the size of newSize.
         vec4state resize(long long newSize) const;
 
     public:
@@ -89,14 +91,18 @@ class vec4state
         vec4state operator>>(const long long num);
 
         // Slice operators
-        vec4state& operator[](const vec4state& index);
-        vec4state& operator[](const long long index);
+        vec4state getBitSelect(const vec4state& index) const;
+        vec4state getBitSelect(const long long index) const;
+        void setBitSelect(const vec4state& index, const vec4state& newValue);
+        void setBitSelect(const long long index, const vec4state& newValue);
+        void setBitSelect(const vec4state& index, const long long newValue);
+        void setBitSelect(const long long index, const long long newValue);
         // Returns a vector that is a slice of the original vector from start to end.
-        vec4state& getSlice(long long end, long long start);
+        vec4state getPartSelect(long long end, long long start) const;
         // Sets the slice of the original vector from start to end to the value of other.
-        void setSlice(long long end, long long start, const vec4state& other);
-        void setSlice(long long end, long long start, long long num);
-        void setSlice(long long end, long long start, string str);
+        void setPartSelect(long long end, long long start, const vec4state& other);
+        void setPartSelect(long long end, long long start, long long num);
+        void setPartSelect(long long end, long long start, string str);
 
         // Logical operators
         vec4state operator&&(const vec4state& other) const;

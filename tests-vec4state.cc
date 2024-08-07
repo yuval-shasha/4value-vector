@@ -609,175 +609,175 @@ TEST_F(vec4stateTest, TestShiftRightBigVectorByIntVector) {
     EXPECT_TRUE(compareVectorToString(shiftRightVector, string("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(shiftRightVector, 108));
 }
-/*
-TEST_F(vec4stateTest, TestGetIndexIntVector) {
-    vec4state indexVector = intVector[2];
+
+TEST_F(vec4stateTest, TestGetBitSelectIntVector) {
+    vec4state indexVector = intVector.getBitSelect(2);
     EXPECT_TRUE(compareVectorToString(indexVector, string("0")));
     EXPECT_TRUE(checkVectorSize(indexVector, 1));
 }
 
-TEST_F(vec4stateTest, TestGetTooHighIndexIntVector) {
-    vec4state indexVector = intVector[32];
+TEST_F(vec4stateTest, TestGetTooHighBitSelectIntVector) {
+    vec4state indexVector = intVector.getBitSelect(32);
     EXPECT_TRUE(compareVectorToString(indexVector, string("x")));
     EXPECT_TRUE(checkVectorSize(indexVector, 1));
 }
 
-TEST_F(vec4stateTest, TestGetTooLowIndexIntVector) {
-    vec4state indexVector = intVector[-1];
+TEST_F(vec4stateTest, TestGetTooLowBitSelectIntVector) {
+    vec4state indexVector = intVector.getBitSelect(-1);
     EXPECT_TRUE(compareVectorToString(indexVector, string("x")));
     EXPECT_TRUE(checkVectorSize(indexVector, 1));
 }
 
-TEST_F(vec4stateTest, TestGetIndexStringVector) {
-    vec4state indexVector = stringVector[2];
+TEST_F(vec4stateTest, TestGetBitSelectStringVector) {
+    vec4state indexVector = stringVector.getBitSelect(2);
     EXPECT_TRUE(compareVectorToString(indexVector, string("z")));
     EXPECT_TRUE(checkVectorSize(indexVector, 1));
 }
 
-TEST_F(vec4stateTest, TestGetIndexBigVector) {
-    vec4state indexVector = bigVector[70];
+TEST_F(vec4stateTest, TestGetBitSelectBigVector) {
+    vec4state indexVector = bigVector.getBitSelect(70);
     EXPECT_TRUE(compareVectorToString(indexVector, string("1")));
     EXPECT_TRUE(checkVectorSize(indexVector, 1));
 }
 
-TEST_F(vec4stateTest, TestGetUnknownIndexIntVector) {
-    vec4state indexVector = intVector[stringVector];
+TEST_F(vec4stateTest, TestGetUnknownBitSelectIntVector) {
+    vec4state indexVector = intVector.getBitSelect(stringVector);
     EXPECT_TRUE(compareVectorToString(indexVector, string("x")));
     EXPECT_TRUE(checkVectorSize(indexVector, 1));
 }
 
-TEST_F(vec4stateTest, TestSetIndexZeroesVector) {
-    zeroesVector[0] = 1;
+TEST_F(vec4stateTest, TestSetBitSelectZeroesVector) {
+    zeroesVector.setBitSelect(0, 1);
     EXPECT_TRUE(compareVectorToString(zeroesVector, string("01")));
     EXPECT_TRUE(checkVectorSize(zeroesVector, 2));
 }
 
-TEST_F(vec4stateTest, TestSetTooHighIndexIntVector) {
-    intVector[32] = 1;
+TEST_F(vec4stateTest, TestSetTooHighBitSelectIntVector) {
+    intVector.setBitSelect(32, 1);
     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
 
-TEST_F(vec4stateTest, TestSetTooLowIndexIntVector) {
-    intVector[-1] = 1;
+TEST_F(vec4stateTest, TestSetTooLowBitSelectIntVector) {
+    intVector.setBitSelect(-1, 1);
     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
 
-TEST_F(vec4stateTest, TestSetIndexStringVectorToDefaultVector) {
-    stringVector[1] = defaultVector;
+TEST_F(vec4stateTest, TestSetBitSelectStringVectorToDefaultVector) {
+    stringVector.setBitSelect(1, defaultVector);
     EXPECT_TRUE(compareVectorToString(stringVector, string("01xzx1")));
     EXPECT_TRUE(checkVectorSize(stringVector, 6));
 }
 
-TEST_F(vec4stateTest, TestSetUnknownIndexIntVectorToInteger) {
-    intVector[stringVector] = 1;
+TEST_F(vec4stateTest, TestSetUnknownBitSelectIntVectorToInteger) {
+    intVector.setBitSelect(stringVector, 1);
     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
 
-TEST_F(vec4stateTest, TestSetIndexStringVectorToZeroAndXVector) {
-    stringVector[1] = zeroAndXVector;
+TEST_F(vec4stateTest, TestSetBitSelectStringVectorToZeroAndXVector) {
+    stringVector.setBitSelect(1, zeroAndXVector);
     EXPECT_TRUE(compareVectorToString(stringVector, string("01xzx1")));
     EXPECT_TRUE(checkVectorSize(stringVector, 6));
 }
 
-TEST_F(vec4stateTest, TestGetSliceIntVector) {
-    vec4state sliceVector = intVector.getSlice(2, 0);
+TEST_F(vec4stateTest, TestGetPartSelectIntVector) {
+    vec4state sliceVector = intVector.getPartSelect(2, 0);
     EXPECT_TRUE(compareVectorToString(sliceVector, string("000")));
     EXPECT_TRUE(checkVectorSize(sliceVector, 3));
 }
 
-TEST_F(vec4stateTest, TestGetSliceWholeIntVector) {
-    vec4state sliceVector = intVector.getSlice(31, 0);
+TEST_F(vec4stateTest, TestGetPartSelectWholeIntVector) {
+    vec4state sliceVector = intVector.getPartSelect(31, 0);
     EXPECT_TRUE(compareVectorToString(sliceVector, string("00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(sliceVector, 31));
 }
 
-TEST_F(vec4stateTest, TestGetSliceTooHighEndIntVector) {
-    vec4state sliceVector = intVector.getSlice(33, 0);
+TEST_F(vec4stateTest, TestGetPartSelectTooHighEndIntVector) {
+    vec4state sliceVector = intVector.getPartSelect(33, 0);
     EXPECT_TRUE(compareVectorToString(sliceVector, string("xx00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(sliceVector, 33));
 }
 
-TEST_F(vec4stateTest, TestGetSliceTooLowStartIntVector) {
-    vec4state sliceVector = intVector.getSlice(5, -5);
+TEST_F(vec4stateTest, TestGetPartSelectTooLowStartIntVector) {
+    vec4state sliceVector = intVector.getPartSelect(5, -5);
     EXPECT_TRUE(compareVectorToString(sliceVector, string("111000xxxxx")));
     EXPECT_TRUE(checkVectorSize(sliceVector, 11));
 }
 
-TEST_F(vec4stateTest, TestGetSliceTooLowStartAndTooHighEndIntVector) {
-    vec4state sliceVector = intVector.getSlice(32, -5);
+TEST_F(vec4stateTest, TestGetPartSelectTooLowStartAndTooHighEndIntVector) {
+    vec4state sliceVector = intVector.getPartSelect(32, -5);
     EXPECT_TRUE(compareVectorToString(sliceVector, string("x00010010001101000101011001111000xxxxx")));
     EXPECT_TRUE(checkVectorSize(sliceVector, 38));
 }
 
-TEST_F(vec4stateTest, TestGetSliceBetweenVPIsBigVector) {
-    vec4state sliceVector = bigVector.getSlice(68, 62);
+TEST_F(vec4stateTest, TestGetPartSelectBetweenVPIsBigVector) {
+    vec4state sliceVector = bigVector.getPartSelect(68, 62);
     EXPECT_TRUE(compareVectorToString(sliceVector, string("0011xzx")));
     EXPECT_TRUE(checkVectorSize(sliceVector, 7));
 }
 
-TEST_F(vec4stateTest, TestSetSliceIntVectorToString) {
-    intVector.setSlice(2, 0, string("111"));
+TEST_F(vec4stateTest, TestSetPartSelectIntVectorToString) {
+    intVector.setPartSelect(2, 0, string("111"));
     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111111")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
 
-TEST_F(vec4stateTest, TestSetSliceIntVectorToStringVector) {
-    intVector.setSlice(10, 4, stringVector);
+TEST_F(vec4stateTest, TestSetPartSelectIntVectorToStringVector) {
+    intVector.setPartSelect(10, 4, stringVector);
     EXPECT_TRUE(compareVectorToString(intVector, string("000100100011010001010001xz111000")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
 
-TEST_F(vec4stateTest, TestSetSliceIntVectorToInteger) {
-    intVector.setSlice(10, 4, 15);
+TEST_F(vec4stateTest, TestSetPartSelectIntVectorToInteger) {
+    intVector.setPartSelect(10, 4, 15);
     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101000011111000")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
 
-TEST_F(vec4stateTest, TestSetSliceTooBigValueIntVector) {
-    intVector.setSlice(1, 0, string("111"));
+TEST_F(vec4stateTest, TestSetPartSelectTooBigValueIntVector) {
+    intVector.setPartSelect(1, 0, string("111"));
     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111011")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
 
-TEST_F(vec4stateTest, TestSetSliceTooSmallValueIntVector) {
-    intVector.setSlice(4, 0, string("x"));
+TEST_F(vec4stateTest, TestSetPartSelectTooSmallValueIntVector) {
+    intVector.setPartSelect(4, 0, string("x"));
     EXPECT_TRUE(compareVectorToString(intVector, string("0001001000110100010101100110000x")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
 
-TEST_F(vec4stateTest, TestSetSliceTooHighEndIntVector) {
-    intVector.setSlice(35, 30, stringVector);
+TEST_F(vec4stateTest, TestSetPartSelectTooHighEndIntVector) {
+    intVector.setPartSelect(35, 30, stringVector);
     EXPECT_TRUE(compareVectorToString(intVector, string("11010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
 
-TEST_F(vec4stateTest, TestSetSliceTooLowStartIntVector) {
-    intVector.setSlice(5, -5, stringVector);
+TEST_F(vec4stateTest, TestSetPartSelectTooLowStartIntVector) {
+    intVector.setPartSelect(5, -5, stringVector);
     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001000000")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
 
-TEST_F(vec4stateTest, TestSetSliceTooLowEndIntVector) {
-    intVector.setSlice(-4, -5, xVector);
+TEST_F(vec4stateTest, TestSetPartSelectTooLowEndIntVector) {
+    intVector.setPartSelect(-4, -5, xVector);
     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
 
-TEST_F(vec4stateTest, TestSetSliceTooHighStartIntVector) {
-    intVector.setSlice(34, 33, xVector);
+TEST_F(vec4stateTest, TestSetPartSelectTooHighStartIntVector) {
+    intVector.setPartSelect(34, 33, xVector);
     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
 
-TEST_F(vec4stateTest, TestSetSliceBetweenVPIsBigVector) {
-    bigVector.setSlice(68, 62, string("111"));
+TEST_F(vec4stateTest, TestSetPartSelectBetweenVPIsBigVector) {
+    bigVector.setPartSelect(68, 62, string("111"));
     EXPECT_TRUE(compareVectorToString(bigVector, string("0110011xzx0111zzzx0110011xzx0111zzzx01100001110111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx")));
     EXPECT_TRUE(checkVectorSize(bigVector, 108));
 }
-*/
+
 TEST_F(vec4stateTest, TestLogicalAndIntVectorWithItself) {
     vec4state andVector = intVector && intVector;
     EXPECT_TRUE(compareVectorToString(andVector, string("1")));
