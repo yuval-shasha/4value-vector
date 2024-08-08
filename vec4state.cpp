@@ -777,6 +777,7 @@ vec4state vec4state::operator-(long long num) const {
     return *this - vec4state(num);
 }
 
+// TODO: Finish the case when the result vector needs to increase even more and the other operators.
 vec4state vec4state::operator*(const vec4state& other) const {
     long long maxSize = max(getSize(), other.getSize());
     if (isUnknown() || other.isUnknown()) return vec4state("x", maxSize);
@@ -786,7 +787,17 @@ vec4state vec4state::operator*(const vec4state& other) const {
     vec4state copy_other = other;
     copy_this.incSize(maxSize);
     copy_other.incSize(maxSize);
-    
+    // for each VPI in this vector, multiply it by each VPI in other vector and add the result to the corresponding VPI in the result vector.
+    for (int i_this = 0; i_this < maxSize; i_this++) {
+        for (int i_other = 0; i_other < maxSize; i_other++) {
+            long long mul = long long(copy_this.vector[i_this].getAval()) * long long(copy_other.vector[i_other].getAval());
+            // Add the lower 32 bits of the multiplication to the result vector.
+            result.vector[max(i_this, i_other)].setAval(result.vector[max(i_this, i_other)].getAval() + uint32_t(mul & 0xFFFFFFFF));
+            // Add the higher 32 bits of the multiplication to the next VPI in the result vector.
+            if (max(i_this, i_other) + 1 >= maxSize) result.incSize(maxSize + 1);
+            result.vector[max(i_this, i_other) + 1].setAval(result.vector[max(i_this, i_other) + 1].getAval() + uint32_t(mul >> 32));
+        }
+    }
 }
 
 vec4state vec4state::operator*(long long num) const {
