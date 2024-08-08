@@ -708,9 +708,26 @@ vec4state vec4state::operator>=(long long num) const {
     return *this >= vec4state(num);
 }
 
-// TODO: Implement the following operators
 vec4state vec4state::operator+(const vec4state& other) const {
     if (isUnknown() || other.isUnknown()) return vec4state("x", max(size, other.getSize()));
+    vec4state copy_this = *this;
+    vec4state copy_other = other;
+    long long maxSize = max(getSize(), other.getSize());
+    copy_this.incSize(maxSize);
+    copy_other.incSize(maxSize);
+    vec4state result = vec4state("0", maxSize);
+    for (long long i = 0; i < maxSize; i++) {
+        long long sum = long long(copy_this.vector[i].getAval()) + long long(copy_other.vector[i].getAval());
+        if (sum > 0xFFFFFFFF) {
+            result.vector[i].setAval(uint32_t(sum & 0xFFFFFFFF));
+            result.vector[i].setBval(0xFFFFFFFF);
+        } else {
+            result.vector[i].setAval(uint32_t(sum));
+            result.vector[i].setBval(0);
+        }
+        result.vector[i].setAval(vector[i].getAval() + other.vector[i].getAval());
+        result.vector[i].setBval(vector[i].getBval() + other.vector[i].getBval());
+    }
 }
 
 vec4state vec4state::operator+(long long num) const {
