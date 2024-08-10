@@ -45,6 +45,10 @@ long long vec4state::vecToLongLong() const {
     return result;
 }
 
+bool vec4state::isNegative() const {
+    return vector[getVectorSize() - 1].getAval() < 0;
+}
+
 vec4state::vec4state() : vector(nullptr)
 {
     vector = new VPI[1];
@@ -777,7 +781,6 @@ vec4state vec4state::operator-(long long num) const {
     return *this - vec4state(num);
 }
 
-// TODO: Finish the case when the result vector needs to increase even more and the other operators.
 vec4state vec4state::operator*(const vec4state& other) const {
     long long maxSize = max(getSize(), other.getSize());
     if (isUnknown() || other.isUnknown()) return vec4state("x", maxSize);
@@ -788,16 +791,26 @@ vec4state vec4state::operator*(const vec4state& other) const {
     copy_this.incSize(maxSize);
     copy_other.incSize(maxSize);
     // for each VPI in this vector, multiply it by each VPI in other vector and add the result to the corresponding VPI in the result vector.
+    long long carry = 0;
     for (int i_this = 0; i_this < maxSize; i_this++) {
         for (int i_other = 0; i_other < maxSize; i_other++) {
             long long mul = long long(copy_this.vector[i_this].getAval()) * long long(copy_other.vector[i_other].getAval());
+            long long new_result = result.vector[max(i_this, i_other)].getAval() + mul + carry;
+            if (new_result > 0xFFFFFFFF) {
+                carry = new_result >> 32;
+                new_result = new_result & 0xFFFFFFFF;
+            }
+            else carry = 0;
             // Add the lower 32 bits of the multiplication to the result vector.
-            result.vector[max(i_this, i_other)].setAval(result.vector[max(i_this, i_other)].getAval() + uint32_t(mul & 0xFFFFFFFF));
-            // Add the higher 32 bits of the multiplication to the next VPI in the result vector.
-            if (max(i_this, i_other) + 1 >= maxSize) result.incSize(maxSize + 1);
-            result.vector[max(i_this, i_other) + 1].setAval(result.vector[max(i_this, i_other) + 1].getAval() + uint32_t(mul >> 32));
+            result.vector[max(i_this, i_other)].setAval(new_result);
         }
     }
+    // If there is a carry in the last iteration, increase the size of the result vector by 1.
+    if (carry) {
+        result.incSize(maxSize + 1);
+        result.vector[maxSize].setAval(carry);
+    }
+    return result;
 }
 
 vec4state vec4state::operator*(long long num) const {
@@ -805,7 +818,22 @@ vec4state vec4state::operator*(long long num) const {
 }
 
 vec4state vec4state::operator/(const vec4state& other) const {
-    if (isUnknown() || other.isUnknown()) return vec4state("x", max(size, other.getSize()));
+    long long maxSize = max(getSize(), other.getSize());
+    if (isUnknown() || other.isUnknown()) return vec4state("x", maxSize);
+    vec4state result = vec4state("0", maxSize);
+    // Align the vectors to the same size.
+    vec4state copy_this = *this;
+    vec4state copy_other = other;
+    copy_this.incSize(maxSize);
+    copy_other.incSize(maxSize);
+    // Divide the vectors using bit manipulation.
+    while ((copy_this >= copy_other).isTrue()) {
+        long long shift = 0;
+        while ((copy_this > (copy_other << (shift + 1))).isTrue()) shift++;
+        copy_this = copy_this - (copy_other << shift);
+        result = result + (vec4state(1) << shift);
+    }
+    return result;
 }
 
 vec4state vec4state::operator/(long long num) const {
@@ -813,7 +841,20 @@ vec4state vec4state::operator/(long long num) const {
 }
 
 vec4state vec4state::operator%(const vec4state& other) const {
-    if (isUnknown() || other.isUnknown()) return vec4state("x", max(size, other.getSize()));
+    long long maxSize = max(getSize(), other.getSize());
+    if (isUnknown() || other.isUnknown()) return vec4state("x", maxSize);
+    // Align the vectors to the same size.
+    vec4state copy_this = *this;
+    vec4state copy_other = other;
+    copy_this.incSize(maxSize);
+    copy_other.incSize(maxSize);
+    // Divide the vectors using bit manipulation and extract the remainder.
+    while ((copy_this >= copy_other).isTrue()) {
+        long long shift = 0;
+        while ((copy_this > (copy_other << (shift + 1))).isTrue()) shift++;
+        copy_this = copy_this - (copy_other << shift);
+    }
+    return copy_this;
 }
 
 vec4state vec4state::operator%(long long num) const {
@@ -826,7 +867,20 @@ vec4state vec4state::operator-() const {
 }
 
 vec4state vec4state::power(const vec4state& other) const {
-
+    vec4state result;
+    if (isUnknown() || other.isUnknown() || ((*this == 0).isTrue() && other.isNegative())) result = vec4state("x", size);
+    else if (((*this == -1).isTrue() && (other % 2 == 0).isTrue()) || (other == 0).isTrue() || (*this == 1).isTrue()) {
+        result = vec4state(1);
+        result.incSize(size);
+    }
+    else if ((*this == -1).isTrue() && (other % 2 == 1).isTrue()) result = vec4state("1", size);
+    else if ((other.isNegative() && ((*this < -1).isTrue() || (*this > 1).isTrue())) || ((*this == 0).isTrue() && !other.isNegative())) result = vec4state("0", size);
+    else {
+        // If the power is positive and this vector is less than -1 or greater than 1:
+        result = *this;
+        for (vec4state i = 2; (i <= other).isTrue(); i = i + 1) result = result * *this;
+    }
+    return result;
 }
 
 vec4state vec4state::power(long long num) const {
