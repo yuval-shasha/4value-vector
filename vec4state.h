@@ -12,7 +12,7 @@ class vec4state
     private:
         // The 4 value vector consists of an array of VPI elements, where each element is 32 bits long that can be either 0, 1, x, or z. The first element is the least significant 32 bits.
         VPI* vector;
-        // Size is the number of bits in the vector
+        // Size is the number of bits in the vector.
         long long size;
 
         // Initializes a vector of size "size" (greater than 0) that contains str (of length 1) repeated size times. 
@@ -21,7 +21,7 @@ class vec4state
         bool isUnknown() const;
         // Returns the number of VPI elements in the vector
         long long getVectorSize() const;
-        // Returns the same vector with size newSize. If newSize is greater than the current size, the vector is extended with 0's.
+        // Returns the same vector with size newSize. If newSize is greater than the current size, the vector is 0-extended.
         void incSize(long long newSize);
         // Returns the same vector with size newSize. If newSize is less than the current size, the vector is truncated.
         void decSize(long long newSize);
@@ -37,6 +37,8 @@ class vec4state
         vec4state resize(long long newSize) const;
         // Returns a vector which holds the value of the vector from end to start.
         vec4state getPartValidRange(long long end, long long start, vec4state& vec) const;
+        // Returns true if this vector is negative, otherwise returns false.
+        bool isNegative() const;
 
     public:
         // C'tors
@@ -141,7 +143,7 @@ class vec4state
         vec4state power(long long num) const;
         
         // Casting operators
-        // TODO: Figure out how to implement these
+        // TODO: how should we do it if we don't have vec2state representation?
 
         /*********** For testing purposes ***********/
         // Returns the size of the vector.
