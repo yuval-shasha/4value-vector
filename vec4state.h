@@ -30,11 +30,13 @@ class vec4state
         // Returns the value of the vector as a long long, use only if the vector has only 2 VPIs (for slicing).
         long long vecToLongLong() const;
         // Returns a vector which it's aval is the result of the bitwise AND operation between the aval of the vector and the aval of other, and it's bval is the result of the bitwise AND operation between the bval of the vector and the bval of other.
-        vec4state bitwiseAndAvalBval(const vec4state& other) const;
+        vec4state bitwiseAndAvalBval(const vec4state& other);
         // Returns a vector which it's aval is the result of the addition of the aval of the vector and the aval of other, and it's bval is the result of the addition of the bval of the vector and the bval of other.
         vec4state AdditionAvalBval(const vec4state& other) const;
         // Returns a vector which it's aval and bval are truncated/extended to the size of newSize.
         vec4state resize(long long newSize) const;
+        // Returns a vector which holds the value of the vector from end to start.
+        vec4state getPartValidRange(long long end, long long start, vec4state& vec) const;
 
     public:
         // C'tors
