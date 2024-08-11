@@ -12,33 +12,31 @@ class vec4state
     private:
         // The 4 value vector consists of an array of VPI elements, where each element is 32 bits long that can be either 0, 1, x, or z. The first element is the least significant 32 bits.
         VPI* vector;
-        // Size is the number of bits in the vector.
-        long long size;
+        // numBits is the number of bits in the vector.
+        long long numBits;
+        // vectorSize is the number of VPI elements in the vector.
+        long long vectorSize;
+        // isUnknown is a flag that indicates if the vector contains any x's or z's (true if it does, false otherwise).
+        bool isUnknown;
 
-        // Initializes a vector of size "size" (greater than 0) that contains str (of length 1) repeated size times. 
-        vec4state(string str, long long size);
-        // Returns true if the vector contains x or z, otherwise returns false
-        bool isUnknown() const;
-        // Returns the number of VPI elements in the vector
-        long long getVectorSize() const;
-        // Returns the same vector with size newSize. If newSize is greater than the current size, the vector is 0-extended.
-        void incSize(long long newSize);
-        // Returns the same vector with size newSize. If newSize is less than the current size, the vector is truncated.
-        void decSize(long long newSize);
-        // Returns true if the vector is equal to "1", otherwise returns false
-        bool isTrue() const;
-        // Returns the value of the vector as a long long, use only if the vector has only 2 VPIs (for slicing).
-        long long vecToLongLong() const;
+        // Initializes a vector with numBits bits (greater than 0) that contains str (of length 1) repeated numBits times.
+        vec4state(string str, long long numBits);
+        // Returns the same vector with numBits = newNumBits. If newSize is greater than the current numBits, the vector is 0-extended.
+        void incNumBits(long long newNumBits);
+        // Returns the same vector with numBits = newNumBits. If newNumBits is less than the current numBits, the vector is truncated.
+        void decNumBits(long long newNumBits);
+        // Returns the numerical value (of type long long) that the vector holds. This method can be used only if the vector has up to 2 VPI elements and has no unknown bits.
+        long long convertVectorToLongLong() const;
         // Returns a vector which it's aval is the result of the bitwise AND operation between the aval of the vector and the aval of other, and it's bval is the result of the bitwise AND operation between the bval of the vector and the bval of other.
         vec4state bitwiseAndAvalBval(const vec4state& other);
         // Returns a vector which it's aval is the result of the addition of the aval of the vector and the aval of other, and it's bval is the result of the addition of the bval of the vector and the bval of other.
         vec4state AdditionAvalBval(const vec4state& other) const;
-        // Returns a vector which it's aval and bval are truncated/extended to the size of newSize.
-        vec4state resize(long long newSize) const;
-        // Returns a vector which holds the value of the vector from end to start.
+        // Returns a vector which it's number of bits is truncated/extended to newNumBits.
+        vec4state changeNumBits(long long newNumBits) const;
+        // Returns a vector which holds the value of the vector from end index to start index.
         vec4state getPartValidRange(long long end, long long start, vec4state& vec) const;
-        // Returns true if this vector is negative, otherwise returns false.
-        bool isNegative() const;
+        // Sets isUnkwon to true if the vector contains any x's or z's, false otherwise.
+        void setUnknown();
 
     public:
         // C'tors
@@ -141,15 +139,16 @@ class vec4state
         vec4state power(const vec4state& other) const;
         // Calculates the value of the vector to the power of num.
         vec4state power(long long num) const;
+
+        // Returns the size of the vector.
+        long long getNumBits() const;
+        // Returns a string representation of the vector.
+        string toString() const;
+        // Returns true if the vector is 1, false if the vector is 0.
+        operator bool() const;
         
         // Casting operators
         // TODO: how should we do it if we don't have vec2state representation?
-
-        /*********** For testing purposes ***********/
-        // Returns the size of the vector.
-        long long getSize() const;
-        // Returns a string representation of the vector.
-        string toString() const;
 };
 
 
