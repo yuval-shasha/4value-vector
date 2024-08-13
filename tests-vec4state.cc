@@ -35,7 +35,7 @@ testing::AssertionResult checkVectorSize(vec4state& vector, long long size) {
     if (vector.getNumBits() == size) {
         return testing::AssertionSuccess();
     } else {
-        return testing::AssertionFailure() << "Expected: " << size << "\nActual: " << vector.getSize();
+        return testing::AssertionFailure() << "Expected: " << size << "\nActual: " << vector.getNumBits();
     }
 }
 
@@ -273,30 +273,22 @@ TEST_F(vec4stateTest, TestBitwiseNotStringVector) {
 
 // Checks that a vector that holds an integer is logically equal to itself.
 TEST_F(vec4stateTest, TestIntVectorEqualityWithItself) {
-    vec4state eqVector = intVector == intVector;
-    EXPECT_TRUE(compareVectorToString(eqVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_TRUE(intVector == intVector);
 }
 
 // Checks that a vector that holds an integer is logically equal to the integer inside the vector.
 TEST_F(vec4stateTest, TestIntVectorEqualityWithInteger) {
-    vec4state eqVector = intVector == 0x12345678;
-    EXPECT_TRUE(compareVectorToString(eqVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_TRUE(intVector == 0x12345678);
 }
 
 // Checks that a vector that holds a long long number is logically equal to itself.
 TEST_F(vec4stateTest, TestLongLongVectorEqualityWithItself) {
-    vec4state eqVector = longLongVector == longLongVector;
-    EXPECT_TRUE(compareVectorToString(eqVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_TRUE(longLongVector == longLongVector);
 }
 
 // Checks that a vector that holds a long long number is logically equal to the long long number inside the vector.
 TEST_F(vec4stateTest, TestLongLongVectorEqualityWithLongLong) {
-    vec4state eqVector = longLongVector == 0x1234567890ABCDEF;
-    EXPECT_TRUE(compareVectorToString(eqVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_TRUE(longLongVector == 0x1234567890ABCDEF);
 }
 
 // Checks that the result of logical equality between a 6-bit vector that holds unknown values and itself returns an unknown value.
@@ -304,6 +296,7 @@ TEST_F(vec4stateTest, TestStringVectorEqualityWithItself) {
     vec4state eqVector = stringVector == stringVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_ANY_THROW(bool result = stringVector == stringVector);
 }
 
 // Checks that the result of logical equality between a 108-bit vector that holds unknown values and itself returns an unknown value.
@@ -311,254 +304,252 @@ TEST_F(vec4stateTest, TestBigVectorEqualityWithItself) {
     vec4state eqVector = bigVector == bigVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_ANY_THROW(bool result = bigVector == bigVector);
 }
 
 // Checks that the result of logical equality between a vector that holds an integer and a vector that holds a long long number (that have common lower 32-bits) is false.
 TEST_F(vec4stateTest, TestIntVectorEqualityWithLongLongVector) {
-    vec4state eqVector = intVector == longLongVector;
-    EXPECT_TRUE(compareVectorToString(eqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_FALSE(intVector == longLongVector);
 }
 
 // Checks that the result of logical equality between a vector that holds an integer and a vector that holds unknown values (that have different values in the bits that are known) returns false.
 TEST_F(vec4stateTest, TestStringVectorEqualityWithIntVector) {
-    vec4state eqVector = stringVector == intVector;
-    EXPECT_TRUE(compareVectorToString(eqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_FALSE(stringVector == intVector);
 }
 
+// Checks that the result of logical equality between an unknown vector and a vector that holds a long long number (that have different values in the bits that are known) returns false.
 TEST_F(vec4stateTest, TestStringVectorEqualityWithLongLongVector) {
-    vec4state eqVector = stringVector == longLongVector;
-    EXPECT_TRUE(compareVectorToString(eqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_FALSE(stringVector == longLongVector);
 }
 
+// Checks that the result of logical equality between two unknown vectors of different sizes returns false.
 TEST_F(vec4stateTest, TestSmallVectorEqualityWithBigVector) {
-    vec4state eqVector = stringVector == bigVector;
-    EXPECT_TRUE(compareVectorToString(eqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(eqVector, 1));
-
-    eqVector = bigVector == stringVector;
-    EXPECT_TRUE(compareVectorToString(eqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_FALSE(stringVector == bigVector);
+    EXPECT_FALSE(bigVector == stringVector);
 }
 
+/// Checks that the result of logical equality between a big unknown vector and a vector that holds a long long number (that have different values in the bits that are known) returns false.
 TEST_F(vec4stateTest, TestBigVectorEqualityWithIntVector) {
-    vec4state eqVector = bigVector == intVector;
-    EXPECT_TRUE(compareVectorToString(eqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_FALSE(bigVector == intVector);
 }
 
+// Checks that the result of logical equality between a big unknown vector and a vector that holds a long long number (that have different values in the bits that are known) returns false.
 TEST_F(vec4stateTest, TestBigVectorEqualityWithLongLongVector) {
-    vec4state eqVector = bigVector == longLongVector;
-    EXPECT_TRUE(compareVectorToString(eqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_FALSE(bigVector == longLongVector);
 }
 
+// Checks that the result of logical equality between a vector that holds only ones and a vector that holds only x's is unknown.
 TEST_F(vec4stateTest, TestOnesVectorEqualityWithXVector) {
     vec4state eqVector = onesVector == xVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_ANY_THROW(bool result = onesVector == xVector);
 }
 
+// Checks that the result of logical equality between a vector that holds only ones and a vector that holds only z's is unknown.
 TEST_F(vec4stateTest, TestOnesVectorEqualityWithZVector) {
     vec4state eqVector = onesVector == zVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_ANY_THROW(bool result = onesVector == zVector);
 }
 
+// Checks that the result of logical equality between a vector that holds two 1's and a vector that holds a one and an x is unknown.
 TEST_F(vec4stateTest, TestOnesVectorEqualityWithOneAndXVector) {
     vec4state eqVector = onesVector == oneAndXVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_ANY_THROW(bool result = onesVector == oneAndXVector);
 }
 
+// Checks that the result of logical equality between a vector that holds two 1's and a vector that holds a zero and a z is false.
 TEST_F(vec4stateTest, TestOnesVectorEqualityWithZeroAndZVector) {
-    vec4state eqVector = onesVector == zeroAndZVector;
-    EXPECT_TRUE(compareVectorToString(eqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_FALSE(onesVector == zeroAndZVector);
 }
 
+// Checks that the result of logical equality between a vector that holds only x's and a vector that holds only z's is unknown.
 TEST_F(vec4stateTest, TestXVectorEqualityWithZVector) {
     vec4state eqVector = xVector == zVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_ANY_THROW(bool result = xVector == zVector);
 }
 
+// Checks that the result of logical equality between a 1's vector and the same vector with x in it's MSB is unknown.
 TEST_F(vec4stateTest, TestOnesVectorEqualityWithXThenOnesVector) {
     vec4state eqVector = onesVector == xThenOnesVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_ANY_THROW(bool result = onesVector == xThenOnesVector);
 }
 
+// Checks that the result of logical equality between a 0's vector and the same vector with z in it's MSB is unknown.
 TEST_F(vec4stateTest, TestZeroesVectorEqualityWithZThenZeroesVector) {
     vec4state eqVector = zeroesVector == zThenZeroesVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
+    EXPECT_ANY_THROW(bool result = zeroesVector == zThenZeroesVector);
 }
 
+// Checks that the result of logical inequality between a vector that holds an integer and itself is false.
 TEST_F(vec4stateTest, TestIntVectorInequalityWithItself) {
-    vec4state neqVector = intVector != intVector;
-    EXPECT_TRUE(compareVectorToString(neqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(neqVector, 1));
+    EXPECT_FALSE(intVector != intVector);
 }
 
+// Checks that the result of logical inequality between a vector that holds an integer and the integer inside the vector is false.
 TEST_F(vec4stateTest, TestIntVectorInequalityWithInteger) {
-    vec4state neqVector = intVector != 0x12345678;
-    EXPECT_TRUE(compareVectorToString(neqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(neqVector, 1));
+    EXPECT_FALSE(intVector != 0x12345678);
 }
 
+// Checks that the result of logical inequality between a vector that holds an integer and a long long number is true.
 TEST_F(vec4stateTest, TestIntVectorInequalityWithLongLong) {
-    vec4state neqVector = intVector != 0x1234567890ABCDEF;
-    EXPECT_TRUE(compareVectorToString(neqVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(neqVector, 1));
+    EXPECT_TRUE(intVector != 0x1234567890ABCDEF);
 }
 
+// Checks that the result of logical inequality between a vector that holds a long long number and an unknown vector (with no common known bits) is false.
 TEST_F(vec4stateTest, TestLongLongVectorInequalityWithBigVector) {
-    vec4state neqVector = longLongVector != bigVector;
-    EXPECT_TRUE(compareVectorToString(neqVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(neqVector, 1));
+    EXPECT_TRUE(longLongVector != bigVector);
 }
 
+// Checks that the result of logical inequality between two unknown vectors of different sizes is true.
 TEST_F(vec4stateTest, TestSmallVectorInequalityWithBigVector) {
-    vec4state neqVector = stringVector != bigVector;
-    EXPECT_TRUE(compareVectorToString(neqVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(neqVector, 1));
+    EXPECT_TRUE(stringVector != bigVector);
 }
 
+// Checks that the result of logical inequality between an unknown vector with itself is unknown.
 TEST_F(vec4stateTest, TestStringVectorInequalityWithItself) {
     vec4state neqVector = stringVector != stringVector;
     EXPECT_TRUE(compareVectorToString(neqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(neqVector, 1));
+    EXPECT_ANY_THROW(bool result = stringVector != stringVector);
 }
 
+// Checks that the result of logical inequality between a vector that holds only ones and a vector that holds only x's is unknown.
 TEST_F(vec4stateTest, TestOnesVectorInequalityWithXVector) {
     vec4state neqVector = onesVector != xVector;
     EXPECT_TRUE(compareVectorToString(neqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(neqVector, 1));
+    EXPECT_ANY_THROW(bool result = onesVector != xVector);
 }
 
+// Checks that the result of logical inequality between a vector that holds only ones and a vector that holds only z's is unknown.
 TEST_F(vec4stateTest, TestOnesVectorInequalityWithZVector) {
     vec4state neqVector = onesVector != zVector;
     EXPECT_TRUE(compareVectorToString(neqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(neqVector, 1));
+    EXPECT_ANY_THROW(bool result = onesVector != zVector);
 }
 
+// Checks that the result of logical inequality between a vector that holds two 1's and a vector that holds a one and an x is unknown.
 TEST_F(vec4stateTest, TestOnesVectorInequalityWithOneAndXVector) {
     vec4state neqVector = onesVector != oneAndXVector;
     EXPECT_TRUE(compareVectorToString(neqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(neqVector, 1));
+    EXPECT_ANY_THROW(bool result = onesVector != oneAndXVector);
 }
 
+// Checks that the result of logical inequality between a vector that holds two 1's and a vector that holds a zero and a z is true.
 TEST_F(vec4stateTest, TestOnesVectorInequalityWithZeroesAndXVector) {
-    vec4state neqVector = onesVector != zeroAndZVector;
-    EXPECT_TRUE(compareVectorToString(neqVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(neqVector, 1));
+    EXPECT_TRUE(onesVector != zeroAndZVector);
 }
 
+// Checks that the result of logical inequality between a vector that holds only x's and a vector that holds only z's is unknown.
 TEST_F(vec4stateTest, TestXVectorInequalityWithZVector) {
     vec4state neqVector = xVector != zVector;
     EXPECT_TRUE(compareVectorToString(neqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(neqVector, 1));
+    EXPECT_ANY_THROW(bool result = xVector != zVector);
 }
 
+// Checks that the result of case equality between a vector that holds an integer and itself is true.
 TEST_F(vec4stateTest, TestIntVectorCaseEqualityWithItself) {
-    vec4state caseEqVector = intVector.caseEquality(intVector);
-    EXPECT_TRUE(compareVectorToString(caseEqVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(caseEqVector, 1));
+    EXPECT_TRUE(intVector.caseEquality(intVector));
 }
 
+// Checks that the result of case equality between a vector that holds an integer and the integer inside the vector is true.
 TEST_F(vec4stateTest, TestIntVectorCaseEqualityWithInteger) {
-    vec4state caseEqVector = intVector.caseEquality(0x12345678);
-    EXPECT_TRUE(compareVectorToString(caseEqVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(caseEqVector, 1));
+    EXPECT_TRUE(intVector.caseEquality(0x12345678));
 }
 
+// Checks that the result of case equality between an unknown vector and itself is true.
 TEST_F(vec4stateTest, TestStringVectorCaseEqualityWithItself) {
-    vec4state caseEqVector = stringVector.caseEquality(stringVector);
-    EXPECT_TRUE(compareVectorToString(caseEqVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(caseEqVector, 1));
+    EXPECT_TRUE(stringVector.caseEquality(stringVector));
 }
 
+// Checks that the result of case equality between two unknown vectors of different sizes is false.
 TEST_F(vec4stateTest, TestSmallVectorCaseEqualityWithBigVector) {
-    vec4state caseEqVector = stringVector.caseEquality(bigVector);
-    EXPECT_TRUE(compareVectorToString(caseEqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(caseEqVector, 1));
+    EXPECT_FALSE(stringVector.caseEquality(bigVector));
 }
 
+// Checks that the result of case equality between a vector that holds only ones and a vector that holds only x's is false.
 TEST_F(vec4stateTest, TestOnesVectorCaseEqualityWithXVector) {
-    vec4state caseEqVector = onesVector.caseEquality(xVector);
-    EXPECT_TRUE(compareVectorToString(caseEqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(caseEqVector, 1));
+    EXPECT_FALSE(onesVector.caseEquality(xVector));
 }
 
+// Checks that the result of case equality between a vector that holds only x's and a vector that holds only z's is false.
 TEST_F(vec4stateTest, TestXVectorCaseEqualityWithZVector) {
-    vec4state caseEqVector = xVector.caseEquality(zVector);
-    EXPECT_TRUE(compareVectorToString(caseEqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(caseEqVector, 1));
+    EXPECT_FALSE(xVector.caseEquality(zVector));
 }
 
+// Checks that the result of case inequality between a vector that holds an integer and itself is false.
 TEST_F(vec4stateTest, TestIntVectorCaseInequalityWithItself) {
-    vec4state caseNeqVector = intVector.caseInequality(intVector);
-    EXPECT_TRUE(compareVectorToString(caseNeqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(caseNeqVector, 1));
+    EXPECT_FALSE(intVector.caseInequality(intVector));
 }
 
+// Checks that the result of case inequality between a vector that holds an integer and the integer inside the vector is false.
 TEST_F(vec4stateTest, TestIntVectorCaseInequalityWithInteger) {
-    vec4state caseNeqVector = intVector.caseInequality(0x12345678);
-    EXPECT_TRUE(compareVectorToString(caseNeqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(caseNeqVector, 1));
+    EXPECT_FALSE(intVector.caseInequality(0x12345678));
 }
 
+// Checks that the result of case inequality between an unknown vector and itself is false.
 TEST_F(vec4stateTest, TestStringVectorCaseInequalityWithItself) {
-    vec4state caseNeqVector = stringVector.caseInequality(stringVector);
-    EXPECT_TRUE(compareVectorToString(caseNeqVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(caseNeqVector, 1));
+    EXPECT_FALSE(stringVector.caseInequality(stringVector));
 }
 
+// Checks that the result of case inequality between two unknown vectors of different sizes is true.
 TEST_F(vec4stateTest, TestSmallVectorCaseInequalityWithBigVector) {
-    vec4state caseNeqVector = stringVector.caseInequality(bigVector);
-    EXPECT_TRUE(compareVectorToString(caseNeqVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(caseNeqVector, 1));
+    EXPECT_TRUE(stringVector.caseInequality(bigVector));
 }
 
+// Checks that the result of case inequality between a vector that holds only ones and a vector that holds only x's is true.
 TEST_F(vec4stateTest, TestOnesVectorCaseInequalityWithXVector) {
-    vec4state caseNeqVector = onesVector.caseInequality(xVector);
-    EXPECT_TRUE(compareVectorToString(caseNeqVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(caseNeqVector, 1));
+    EXPECT_TRUE(onesVector.caseInequality(xVector));
 }
 
+// Checks that the result of case inequality between a vector that holds only x's and a vector that holds only z's is true.
 TEST_F(vec4stateTest, TestXVectorCaseInequalityWithZVector) {
-    vec4state caseNeqVector = xVector.caseInequality(zVector);
-    EXPECT_TRUE(compareVectorToString(caseNeqVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(caseNeqVector, 1));
+    EXPECT_TRUE(xVector.caseInequality(zVector));
 }
 
+// Checks that the result of shifting a vector that holds an integer to the left by two bits is the same as the integer shifted to the left by two bits. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftIntVectorByTwo) {
     vec4state shiftLeftVector = intVector << 2;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("01001000110100010101100111100000")));
     EXPECT_TRUE(checkVectorSize(shiftLeftVector, 32));
 }
 
+// Checks that the result of shifting a vector that holds an integer to the left by thirty two bits is a vector that holds only zeroes. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftIntVectorByThirtyTwo) {
     vec4state shiftLeftVector = intVector << 32;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("00000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(shiftLeftVector, 32));
 }
 
+// Checks that the result of shifting a vector that holds a long long number to the left by two bits is the same as the long long number shifted to the left by two bits. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftLongLongVectorByTwo) {
     vec4state shiftLeftVector = longLongVector << 2;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("0100100011010001010110011110001001000010101011110011011110111100")));
     EXPECT_TRUE(checkVectorSize(shiftLeftVector, 64));
 }
 
+// Checks that the result of shifting a vector that holds a long long number to the left by sixty four bits is a vector that holds only zeroes. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftLongLongVectorBySixtyFour) {
     vec4state shiftLeftVector = longLongVector << 64;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("0000000000000000000000000000000000000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(shiftLeftVector, 64));
 }
 
+// Checks that the result of shifting a vector that holds a long long number to the left by thirty five bits is the same as the long long number shifted to the left by thirty five bits. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftLongLongVectorByThirtyFive) {
     vec4state shiftLeftVector = longLongVector << 35;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("1000010101011110011011110111100000000000000000000000000000000000")));
@@ -655,7 +646,6 @@ TEST_F(vec4stateTest, TestShiftRightBigVectorByIntVector) {
     EXPECT_TRUE(checkVectorSize(shiftRightVector, 108));
 }
 
-
 TEST_F(vec4stateTest, TestGetBitSelectIntVector) {
     vec4state indexVector = intVector.getBitSelect(2);
     EXPECT_TRUE(compareVectorToString(indexVector, string("0")));
@@ -728,8 +718,6 @@ TEST_F(vec4stateTest, TestSetBitSelectStringVectorToZeroAndXVector) {
     EXPECT_TRUE(checkVectorSize(stringVector, 6));
 }
 
-
-
 TEST_F(vec4stateTest, TestGetPartSelectIntVector) {
     vec4state sliceVector = intVector.getPartSelect(2, 0);
     EXPECT_TRUE(compareVectorToString(sliceVector, string("000")));
@@ -764,6 +752,11 @@ TEST_F(vec4stateTest, TestGetPartSelectBetweenVPIsBigVector) {
     vec4state sliceVector = bigVector.getPartSelect(68, 62);
     EXPECT_TRUE(compareVectorToString(sliceVector, string("0011xzx")));
     EXPECT_TRUE(checkVectorSize(sliceVector, 7));
+}
+
+// Checks that the getPartSelect method throws an exception when the end index is less than the start index.
+TEST_F(vec4stateTest, TestGetPartSelectEndLessThanStart) {
+    EXPECT_ANY_THROW(bigVector.getPartSelect(62, 68));
 }
 
 TEST_F(vec4stateTest, TestSetPartSelectIntVectorToString) {
@@ -826,284 +819,228 @@ TEST_F(vec4stateTest, TestSetPartSelectBetweenVPIsBigVector) {
     EXPECT_TRUE(checkVectorSize(bigVector, 108));
 }
 
+// Checks that the setPartSelect method throws an exception when the end index is less than the start index.
+TEST_F(vec4stateTest, TestSetPartSelectEndLessThanStart) {
+    EXPECT_ANY_THROW(bigVector.setPartSelect(62, 68, string("111")));
+}
+
 TEST_F(vec4stateTest, TestLogicalAndIntVectorWithItself) {
-    vec4state andVector = intVector && intVector;
-    EXPECT_TRUE(compareVectorToString(andVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(andVector, 1));
+    EXPECT_TRUE(intVector && intVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalAndIntVectorWithInteger) {
-    vec4state andVector = intVector && 0x12345678;
-    EXPECT_TRUE(compareVectorToString(andVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(andVector, 1));
+    EXPECT_TRUE(intVector && 0x12345678);
 }
 
 TEST_F(vec4stateTest, TestLogicalAndIntVectorWithLongLongVector) {
-    vec4state andVector = intVector && longLongVector;
-    EXPECT_TRUE(compareVectorToString(andVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(andVector, 1));
+    EXPECT_TRUE(intVector && longLongVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalAndIntVectorWithStringVector) {
-    vec4state andVector = intVector && stringVector;
-    EXPECT_TRUE(compareVectorToString(andVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(andVector, 1));
+    EXPECT_TRUE(intVector && stringVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalAndIntVectorWithXVector) {
     vec4state andVector = intVector && xVector;
     EXPECT_TRUE(compareVectorToString(andVector, string("x")));
     EXPECT_TRUE(checkVectorSize(andVector, 1));
+    EXPECT_ANY_THROW(bool result = intVector && xVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalAndStringVectorWithZVector) {
     vec4state andVector = stringVector && zVector;
     EXPECT_TRUE(compareVectorToString(andVector, string("x")));
     EXPECT_TRUE(checkVectorSize(andVector, 1));
+    EXPECT_ANY_THROW(bool result = stringVector && zVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalAndZVectorWithZeroesVector) {
-    vec4state andVector = zVector && zeroesVector;
-    EXPECT_TRUE(compareVectorToString(andVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(andVector, 1));
+    EXPECT_FALSE(zVector && zeroesVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalAndXVectorWithZVector) {
     vec4state andVector = xVector && zVector;
     EXPECT_TRUE(compareVectorToString(andVector, string("x")));
     EXPECT_TRUE(checkVectorSize(andVector, 1));
+    EXPECT_ANY_THROW(bool result = xVector && zVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalAndZeroesVectorWithOnesVector) {
-    vec4state andVector = zeroesVector && onesVector;
-    EXPECT_TRUE(compareVectorToString(andVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(andVector, 1));
+    EXPECT_FALSE(zeroesVector && onesVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalOrIntVectorWithItself) {
-    vec4state orVector = intVector || intVector;
-    EXPECT_TRUE(compareVectorToString(orVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(orVector, 1));
+    EXPECT_TRUE(intVector || intVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalOrIntVectorWithInteger) {
-    vec4state orVector = intVector || 0x12345678;
-    EXPECT_TRUE(compareVectorToString(orVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(orVector, 1));
+    EXPECT_TRUE(intVector || 0x12345678);
 }
 
 TEST_F(vec4stateTest, TestLogicalOrIntVectorWithLongLongVector) {
-    vec4state orVector = intVector || longLongVector;
-    EXPECT_TRUE(compareVectorToString(orVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(orVector, 1));
+    EXPECT_TRUE(intVector || longLongVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalOrIntVectorWithStringVector) {
-    vec4state orVector = intVector || stringVector;
-    EXPECT_TRUE(compareVectorToString(orVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(orVector, 1));
+    EXPECT_TRUE(intVector || stringVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalOrIntVectorWithXVector) {
-    vec4state orVector = intVector || xVector;
-    EXPECT_TRUE(compareVectorToString(orVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(orVector, 1));
+    EXPECT_TRUE(intVector || xVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalOrStringVectorWithZVector) {
-    vec4state orVector = stringVector || zVector;
-    EXPECT_TRUE(compareVectorToString(orVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(orVector, 1));
+    EXPECT_TRUE(stringVector || zVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalOrZVectorWithZero) {
     vec4state orVector = zVector || 0;
     EXPECT_TRUE(compareVectorToString(orVector, string("x")));
     EXPECT_TRUE(checkVectorSize(orVector, 1));
+    EXPECT_ANY_THROW(bool result = zVector || 0);
 }
 
 TEST_F(vec4stateTest, TestLogicalOrXVectorWithZVector) {
     vec4state orVector = xVector || zVector;
     EXPECT_TRUE(compareVectorToString(orVector, string("x")));
     EXPECT_TRUE(checkVectorSize(orVector, 1));
+    EXPECT_ANY_THROW(bool result = xVector || zVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalOrZeroesVectorWithZero) {
-    vec4state orVector = zeroesVector || 0;
-    EXPECT_TRUE(compareVectorToString(orVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(orVector, 1));
+    EXPECT_FALSE(zeroesVector || 0);
 }
 
 TEST_F(vec4stateTest, TestLogicalNotIntVector) {
-    vec4state notVector = !intVector;
-    EXPECT_TRUE(compareVectorToString(notVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(notVector, 1));
+    EXPECT_FALSE(!intVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalNotStringVector) {
-    vec4state notVector = !stringVector;
-    EXPECT_TRUE(compareVectorToString(notVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(notVector, 1));
+    EXPECT_FALSE(!stringVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalNotXVector) {
     vec4state notVector = !xVector;
     EXPECT_TRUE(compareVectorToString(notVector, string("x")));
     EXPECT_TRUE(checkVectorSize(notVector, 1));
+    EXPECT_ANY_THROW(bool result = !xVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalNotZVector) {
     vec4state notVector = !zVector;
     EXPECT_TRUE(compareVectorToString(notVector, string("x")));
     EXPECT_TRUE(checkVectorSize(notVector, 1));
+    EXPECT_ANY_THROW(bool result = !zVector);
 }
 
 TEST_F(vec4stateTest, TestLogicalNotZeroesVector) {
-    vec4state notVector = !zeroesVector;
-    EXPECT_TRUE(compareVectorToString(notVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(notVector, 1));
+    EXPECT_TRUE(!zeroesVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorLessThanItself) {
-    vec4state ltVector = intVector < intVector;
-    EXPECT_TRUE(compareVectorToString(ltVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(ltVector, 1));
+    EXPECT_FALSE(intVector < intVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorLessThanInteger) {
-    vec4state ltVector = intVector < 0x12345678;
-    EXPECT_TRUE(compareVectorToString(ltVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(ltVector, 1));
+    EXPECT_FALSE(intVector < 0x12345678);
 }
 
 TEST_F(vec4stateTest, TestRelationalLongLongVectorLessThanIntVector) {
-    vec4state ltVector = longLongVector < intVector;
-    EXPECT_TRUE(compareVectorToString(ltVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(ltVector, 1));
+    EXPECT_FALSE(longLongVector < intVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorLessThanLongLongVector) {
-    vec4state ltVector = intVector < longLongVector;
-    EXPECT_TRUE(compareVectorToString(ltVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(ltVector, 1));
+    EXPECT_TRUE(intVector < longLongVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorLessThanStringVector) {
     vec4state ltVector = intVector < stringVector;
     EXPECT_TRUE(compareVectorToString(ltVector, string("x")));
     EXPECT_TRUE(checkVectorSize(ltVector, 1));
+    EXPECT_ANY_THROW(bool result = intVector < stringVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalZeroesVectorLessThanOnesVector) {
-    vec4state ltVector = zeroesVector < onesVector;
-    EXPECT_TRUE(compareVectorToString(ltVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(ltVector, 1));
+    EXPECT_TRUE(zeroesVector < onesVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorGreaterThanItself) {
-    vec4state gtVector = intVector > intVector;
-    EXPECT_TRUE(compareVectorToString(gtVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(gtVector, 1));
+    EXPECT_FALSE(intVector > intVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorGreaterThanInteger) {
-    vec4state gtVector = intVector > 0x12345678;
-    EXPECT_TRUE(compareVectorToString(gtVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(gtVector, 1));
+    EXPECT_FALSE(intVector > 0x12345678);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorGreaterThanLongLongVector) {
-    vec4state gtVector = intVector > longLongVector;
-    EXPECT_TRUE(compareVectorToString(gtVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(gtVector, 1));
+    EXPECT_FALSE(intVector > longLongVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalLongLongVectorGreaterThanIntVector) {
-    vec4state gtVector = longLongVector > intVector;
-    EXPECT_TRUE(compareVectorToString(gtVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(gtVector, 1));
+    EXPECT_TRUE(longLongVector > intVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorGreaterThanStringVector) {
     vec4state gtVector = intVector > stringVector;
     EXPECT_TRUE(compareVectorToString(gtVector, string("x")));
     EXPECT_TRUE(checkVectorSize(gtVector, 1));
+    EXPECT_ANY_THROW(bool result = intVector > stringVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalZeroesVectorGreaterThanOnesVector) {
-    vec4state gtVector = zeroesVector > onesVector;
-    EXPECT_TRUE(compareVectorToString(gtVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(gtVector, 1));
+    EXPECT_FALSE(zeroesVector > onesVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorLessThanEqualToItself) {
-    vec4state lteVector = intVector <= intVector;
-    EXPECT_TRUE(compareVectorToString(lteVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(lteVector, 1));
+    EXPECT_TRUE(intVector <= intVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorLessThanEqualToInteger) {
-    vec4state lteVector = intVector <= 0x12345678;
-    EXPECT_TRUE(compareVectorToString(lteVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(lteVector, 1));
+    EXPECT_TRUE(intVector <= 0x12345678);
 }
 
 TEST_F(vec4stateTest, TestRelationalLongLongVectorLessThanEqualToIntVector) {
-    vec4state lteVector = longLongVector <= intVector;
-    EXPECT_TRUE(compareVectorToString(lteVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(lteVector, 1));
+    EXPECT_FALSE(longLongVector <= intVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorLessThanEqualToLongLongVector) {
-    vec4state lteVector = intVector <= longLongVector;
-    EXPECT_TRUE(compareVectorToString(lteVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(lteVector, 1));
+    EXPECT_TRUE(intVector <= longLongVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorLessThanEqualToStringVector) {
     vec4state lteVector = intVector <= stringVector;
     EXPECT_TRUE(compareVectorToString(lteVector, string("x")));
     EXPECT_TRUE(checkVectorSize(lteVector, 1));
+    EXPECT_ANY_THROW(bool result = intVector <= stringVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalZeroesVectorLessThanEqualToOnesVector) {
-    vec4state lteVector = zeroesVector <= onesVector;
-    EXPECT_TRUE(compareVectorToString(lteVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(lteVector, 1));
+    EXPECT_TRUE(zeroesVector <= onesVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorGreaterThanEqualToItself) {
-    vec4state gteVector = intVector >= intVector;
-    EXPECT_TRUE(compareVectorToString(gteVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(gteVector, 1));
+    EXPECT_TRUE(intVector >= intVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorGreaterThanEqualToInteger) {
-    vec4state gteVector = intVector >= 0x12345678;
-    EXPECT_TRUE(compareVectorToString(gteVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(gteVector, 1));
+    EXPECT_TRUE(intVector >= 0x12345678);
 }
 
 TEST_F(vec4stateTest, TestRelationalLongLongVectorGreaterThanEqualToIntVector) {
-    vec4state gteVector = longLongVector >= intVector;
-    EXPECT_TRUE(compareVectorToString(gteVector, string("1")));
-    EXPECT_TRUE(checkVectorSize(gteVector, 1));
+    EXPECT_TRUE(longLongVector >= intVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorGreaterThanEqualToLongLongVector) {
-    vec4state gteVector = intVector >= longLongVector;
-    EXPECT_TRUE(compareVectorToString(gteVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(gteVector, 1));
+    EXPECT_FALSE(intVector >= longLongVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalIntVectorGreaterThanEqualToStringVector) {
     vec4state gteVector = intVector >= stringVector;
     EXPECT_TRUE(compareVectorToString(gteVector, string("x")));
     EXPECT_TRUE(checkVectorSize(gteVector, 1));
+    EXPECT_ANY_THROW(bool result = intVector >= stringVector);
 }
 
 TEST_F(vec4stateTest, TestRelationalZeroesVectorGreaterThanEqualToOnesVector) {
-    vec4state gteVector = zeroesVector >= onesVector;
-    EXPECT_TRUE(compareVectorToString(gteVector, string("0")));
-    EXPECT_TRUE(checkVectorSize(gteVector, 1));
+    EXPECT_FALSE(zeroesVector >= onesVector);
 }

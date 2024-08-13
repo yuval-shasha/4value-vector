@@ -11,16 +11,20 @@ long long calcVectorSize(long long numBits) {
 void vec4state::setUnknown() {
     for (int i = 0; i < vectorSize; i++) {
         if (vector[i].getBval() != 0) {
-            isUnknown = true;
+            unknown = true;
             return;
-        } 
+        }
     }
-    isUnknown = false;
+    unknown = false;
 }
 
 void vec4state::incNumBits(long long newNumBits) {
-    decNumBits(numBits);
-    if (newNumBits <= numBits) return;
+    if (newNumBits <= 0) {
+        throw string("Number of bits must be positive");
+    }
+    if (newNumBits <= numBits) {
+        throw string("Number of bits must be greater than the current number of bits");
+    }
     long long oldVectorSize = vectorSize;
     numBits = newNumBits;
     vectorSize = calcVectorSize(numBits);
@@ -38,29 +42,45 @@ void vec4state::incNumBits(long long newNumBits) {
 }
 
 void vec4state::decNumBits(long long newNumBits) {
-    if (newNumBits > numBits) return;
+    if (newNumBits < 0) {
+        throw string("Number of bits must be non-negative");
+    }
+    if (newNumBits >= numBits) {
+        throw string("Number of bits must be less than the current number of bits");
+    }
+    if (newNumBits == 0) {
+        *this = vec4state("x", 1);
+        return;
+    }
     long long indexLastCell = ((newNumBits + 31) / 32) - 1;
     long long offset = newNumBits % 32;
     long long mask = (long long)(pow(2, offset) - 1);
-    // Zero down the bits that are not in the new size.
-    for (long long i = indexLastCell; i < vectorSize; i++) {
-        // If the last cell needs to be truncated in the middle
-        if (i == indexLastCell && offset != 0) {
-            vector[i].setAval(vector[i].getAval() & mask);
-            vector[i].setBval(vector[i].getBval() & mask);
-        }
-        // Zero down the bits that are not in the new size.
-        else if (i > indexLastCell) {
-            vector[i].setAval(0);
-            vector[i].setBval(0);
-        }
-    }
     numBits = newNumBits;
     vectorSize = calcVectorSize(numBits);
-    if (isUnknown) setUnknown();
+    VPI* newVector = new VPI[vectorSize];
+    for (long long i = 0; i <= indexLastCell; i++) {
+        // If the current cell is still in range.
+        if (i < indexLastCell) {
+            newVector[i] = vector[i];
+        }
+        // If the last cell needs to be truncated in the middle
+        else if (offset != 0) {
+            newVector[i].setAval(vector[i].getAval() & mask);
+            newVector[i].setBval(vector[i].getBval() & mask);
+        }
+    }
+    delete[] vector;
+    vector = newVector;
+    if (unknown) setUnknown();
 }
 
 long long vec4state::convertVectorToLongLong() const {
+    if (vectorSize > 2) {
+        throw string("Cannot convert a vector that stores more than 64 bits to long long number");
+    }
+    if (unknown) {
+        throw string("Cannot convert unknown vector to long long number");
+    }
     long long result = 0;
     for (long long i = min(vectorSize, long long(2)); i >= 0; i--) {
         result = result << 32;
@@ -73,16 +93,15 @@ vec4state vec4state::bitwiseAndAvalBval(const vec4state& other) {
     vec4state copy_this = *this;
     vec4state copy_other = other;
     long long maxSize = max(numBits, other.numBits);
-    copy_this.incNumBits(maxSize);
-    copy_other.incNumBits(maxSize);
+    copy_this.setNumBits(maxSize);
+    copy_other.setNumBits(maxSize);
     vec4state result = vec4state("0", maxSize);
     for (int i = 0; i < result.vectorSize; i++) {
         result.vector[i].setAval(copy_this.vector[i].getAval() & copy_other.vector[i].getAval());
         result.vector[i].setBval(copy_this.vector[i].getBval() & copy_other.vector[i].getBval());
     }
-    decNumBits(numBits);
     result.setUnknown();
-    return result;
+    return move(result);
 }
 
 vec4state vec4state::AdditionAvalBval(const vec4state& other) const {
@@ -97,39 +116,42 @@ vec4state vec4state::AdditionAvalBval(const vec4state& other) const {
         result.vector[i].setBval(copy_this.vector[i].getBval() + copy_other.vector[i].getBval());
     }
     result.setUnknown();
-    return result;
+    return move(result);
 }
 
-vec4state vec4state::changeNumBits(long long newNumBits) const {
-    vec4state result = *this;
+void vec4state::setNumBits(long long newNumBits) {
+    if (newNumBits < 0) {
+        throw string("Number of bits must be non-negative");
+    }
     // If need to extend the vector
     if (newNumBits > numBits) {
-        result.incNumBits(newNumBits);
+        incNumBits(newNumBits);
     }
     // If need to truncate the vector
     if (newNumBits < numBits) {
-        result.decNumBits(newNumBits);
+        decNumBits(newNumBits);
     }
-    return result;
 }
 
-vec4state vec4state::getPartValidRange(long long end, long long start, vec4state& vec) const {
-    // Gets valid input range and vec starts from start.
-    vec4state result = vec4state("z", end - start + 1);
+vec4state vec4state::getPartValidRange(long long end) const {
+    if (end < 0) throw string("end must be non-negative");
+    if (end >= numBits) {
+        throw string("end must be less than the number of bits in the vector");
+    }
+    vec4state result = vec4state("z", end);
     for (long long i = 0; i < result.vectorSize; i++) {
-        result.vector[i].setAval(vec.vector[i].getAval());
-        result.vector[i].setBval(vec.vector[i].getBval());
+        result.vector[i].setAval(vector[i].getAval());
+        result.vector[i].setBval(vector[i].getBval());
     }
     result.setUnknown();
-    result.decNumBits(end - start + 1);
-    return result;
+    return move(result);
 }
 
 vec4state::vec4state() : vector(nullptr) {
     vector = new VPI[1];
     numBits = 1;
     vectorSize = 1;
-    isUnknown = false;
+    unknown = false;
 }
 
 vec4state::vec4state(int num) : vector(nullptr) {
@@ -138,7 +160,7 @@ vec4state::vec4state(int num) : vector(nullptr) {
     vectorSize = 1;
     vector[0].setAval(num);
     vector[0].setBval(0);
-    isUnknown = false;
+    unknown = false;
 }
 
 vec4state::vec4state(long long num) : vector(nullptr) {
@@ -150,7 +172,7 @@ vec4state::vec4state(long long num) : vector(nullptr) {
     vector[1].setAval(uint32_t(num >> 32));
     vector[0].setBval(0);
     vector[1].setBval(0);
-    isUnknown = false;
+    unknown = false;
 }
 
 // Helper function for filling the remainder of the string into the MSB chunk in the vector.
@@ -231,6 +253,12 @@ vec4state::vec4state(string str) : vector(nullptr) {
 }
     
 vec4state::vec4state(string str, long long numBits) : vector(nullptr) {
+    if (str.length() == 0 || str.length() > 1) {
+        throw string("String must contain exactly one character");
+    }
+    if (numBits <= 0) {
+        throw string("Number of bits must be greater than 0");
+    }
     string result_str;
     for (int i = 0; i < numBits; i++) {
         result_str += str;
@@ -238,11 +266,15 @@ vec4state::vec4state(string str, long long numBits) : vector(nullptr) {
     *this = vec4state(result_str);
 }
 
-vec4state::vec4state(const vec4state& other) : numBits(other.numBits), vectorSize(other.vectorSize), isUnknown(other.isUnknown), vector(nullptr) {
+vec4state::vec4state(const vec4state& other) : numBits(other.numBits), vectorSize(other.vectorSize), unknown(other.unknown), vector(nullptr) {
     vector = new VPI[other.vectorSize];
     for (int i = 0; i < other.vectorSize; i++) {
         vector[i] = other.vector[i];
     }
+}
+
+vec4state::vec4state(vec4state&& other) : numBits(other.numBits), vectorSize(other.vectorSize), unknown(other.unknown), vector(other.vector) {
+    other.vector = nullptr;
 }
 
 vec4state::~vec4state() {
@@ -254,7 +286,7 @@ vec4state& vec4state::operator=(const vec4state& other) {
     delete[] vector;
     numBits = other.numBits;
     vectorSize = other.vectorSize;
-    isUnknown = other.isUnknown;
+    unknown = other.unknown;
     vector = new VPI[vectorSize];
     for (int i = 0; i < vectorSize; i++) {
         vector[i] = other.vector[i];
@@ -280,11 +312,11 @@ vec4state& vec4state::operator=(string str) {
 vec4state vec4state::operator&(const vec4state& other) const {
     vec4state copy_this = *this;
     vec4state copy_other = other;
-    copy_this.incNumBits(max(numBits, other.numBits));
-    copy_other.incNumBits(max(numBits, other.numBits));
+    copy_this.setNumBits(max(numBits, other.numBits));
+    copy_other.setNumBits(max(numBits, other.numBits));
     vec4state result = ~(~copy_this | ~copy_other);
     result.setUnknown();
-    return result;
+    return move(result);
 }
 
 vec4state vec4state::operator&(long long num) const {
@@ -301,8 +333,8 @@ vec4state vec4state::operator|(const vec4state& other) const {
     long long maxVectorSize = max(vectorSize, other.vectorSize);
     long long maxNumBits = max(numBits, other.numBits);
     vec4state result = vec4state("0", maxNumBits);
-    copy_this.incNumBits(maxNumBits);
-    copy_other.incNumBits(maxNumBits);
+    copy_this.setNumBits(maxNumBits);
+    copy_other.setNumBits(maxNumBits);
     for (long long i = 0; i < maxVectorSize; i++) {
         copy_this.vector[i].setAval(copy_this.vector[i].getAval() - (copy_this.vector[i].getAval() & copy_this.vector[i].getBval()));
         copy_other.vector[i].setAval(copy_other.vector[i].getAval() - (copy_other.vector[i].getAval() & copy_other.vector[i].getBval()));
@@ -316,7 +348,7 @@ vec4state vec4state::operator|(const vec4state& other) const {
         result.vector[i].setBval(copy_this.vector[i].getBval() | copy_other.vector[i].getBval());
     }
     result.setUnknown();
-    return result;
+    return move(result);
 }
 
 vec4state vec4state::operator|(long long num) const {
@@ -330,9 +362,9 @@ vec4state vec4state::operator|(int num) const {
 vec4state vec4state::operator^(const vec4state& other) const {
     vec4state copy_this = *this;
     vec4state copy_other = other;
-    copy_this.incNumBits(max(numBits, other.numBits));
-    copy_other.incNumBits(max(numBits, other.numBits));
-    return (copy_this & ~copy_other) | (~copy_this & copy_other);
+    copy_this.setNumBits(max(numBits, other.numBits));
+    copy_other.setNumBits(max(numBits, other.numBits));
+    return ((copy_this & ~copy_other) | (~copy_this & copy_other));
 }
 
 vec4state vec4state::operator^(long long num) const {
@@ -343,13 +375,33 @@ vec4state vec4state::operator^(int num) const {
     return *this ^ vec4state(num);
 }
 
+// Helper function for zeroing down the bits that are out of range while the vector stays the same size.
+void zeroDownOutOfRangeBits(VPI* vector, long long vectorSize, long long numBits) {
+    long long indexLastCell = ((numBits + 31) / 32) - 1;
+    long long offset = numBits % 32;
+    long long mask = (long long)(pow(2, offset) - 1);
+    for (long long i = indexLastCell; i < vectorSize; i++) {
+        if (i == indexLastCell) {
+            if (offset) {
+                // If the last relevant cell needs to be truncated in the middle.
+                vector[i].setAval(vector[i].getAval() & mask);
+                vector[i].setBval(vector[i].getBval() & mask);
+            }
+        } else {
+            vector[i].setAval(0);
+            vector[i].setBval(0);
+        }
+    }
+}
+
 vec4state vec4state::operator~() const {
     vec4state result = *this;
     for (int i = 0; i < vectorSize; i++) {
         result.vector[i].setAval(~(result.vector[i].getAval() | result.vector[i].getBval()));
     }
     result.setUnknown();
-    return result;
+    zeroDownOutOfRangeBits(result.vector, result.vectorSize, result.numBits);
+    return move(result);
 }
 
 vec4state vec4state::operator==(const vec4state& other) const {
@@ -365,12 +417,20 @@ vec4state vec4state::operator==(const vec4state& other) const {
     return vec4state("1", 1);
 }
 
+vec4state vec4state::operator==(int num) const {
+    return *this == vec4state(num);
+}
+
 vec4state vec4state::operator==(long long num) const {
     return *this == vec4state(num);
 }
 
 vec4state vec4state::operator!=(const vec4state& other) const {
-    return ~(*this == other);
+    return !(*this == other);
+}
+
+vec4state vec4state::operator!=(int num) const {
+    return *this != vec4state(num);
 }
 
 vec4state vec4state::operator!=(long long num) const {
@@ -405,7 +465,7 @@ vec4state vec4state::caseEquality(long long num) const {
 }
 
 vec4state vec4state::caseInequality(const vec4state& other) const {
-    return ~caseEquality(other);
+    return !caseEquality(other);
 }
 
 vec4state vec4state::caseInequality(long long num) const {
@@ -413,7 +473,7 @@ vec4state vec4state::caseInequality(long long num) const {
 }
 
 vec4state vec4state::operator<<(const vec4state& other) {
-    if (other.isUnknown) {
+    if (other.unknown) {
         return vec4state("x", numBits);
     }
     for (long long i = other.vectorSize - 1; i >= 2; i--) {
@@ -431,7 +491,7 @@ vec4state vec4state::operator<<(const vec4state& other) {
     }
     vec4state result = *this << num;
     result.setUnknown();
-    return result;
+    return move(result);
 }
 
 vec4state vec4state::operator<<(const long long num) {
@@ -463,11 +523,15 @@ vec4state vec4state::operator<<(const long long num) {
         }
     }
     res.setUnknown();
-    return res;
+    return move(res);
+}
+
+vec4state vec4state::operator<<(const int num) {
+    return *this << long long(num);
 }
 
 vec4state vec4state::operator>>(const vec4state& other) {
-    if (other.isUnknown) return vec4state("x", numBits);
+    if (other.unknown) return vec4state("x", numBits);
     for (long long i = other.vectorSize - 1; i >= 2; i--) {
         if (other.vector[i].getAval() != 0) {
             return vec4state("0", numBits);
@@ -483,10 +547,11 @@ vec4state vec4state::operator>>(const vec4state& other) {
     }
     vec4state result = *this >> num;
     result.setUnknown();
-    return result;
+    return move(result);
 }
 
 vec4state vec4state::operator>>(const long long num) {
+    if (num == 0) return *this;
     if (num < 0) {
         return vec4state("0", numBits);
     }
@@ -514,11 +579,15 @@ vec4state vec4state::operator>>(const long long num) {
         }
     }
     res.setUnknown();
-    return res;
+    return move(res);
+}
+
+vec4state vec4state::operator>>(const int num) {
+    return *this >> long long(num);
 }
 
 vec4state vec4state::getBitSelect(const vec4state& index) const {
-    if (index.isUnknown || index > vec4state(numBits) || index < vec4state(0)) {
+    if (index.unknown || index > vec4state(numBits) || index < vec4state(0)) {
         return vec4state("x", 1);
     } else {
         return getPartSelect(index.convertVectorToLongLong(), index.convertVectorToLongLong());
@@ -530,7 +599,7 @@ vec4state vec4state::getBitSelect(const long long index) const {
 }
 
 void vec4state::setBitSelect(const vec4state& index, const vec4state& newValue) {
-    if (index.isUnknown || index > vec4state(numBits) || index < vec4state(0)) {
+    if (index.unknown || index > vec4state(numBits) || index < vec4state(0)) {
         return;
     }
     setPartSelect(index.convertVectorToLongLong(), index.convertVectorToLongLong(), newValue);
@@ -551,49 +620,54 @@ void vec4state::setBitSelect(const long long index, const long long newValue) {
 vec4state vec4state::getPartSelect(long long end, long long start) const {
     // If input is invalid.
     if (end < start) {
-        return vec4state("x", 1);
+        throw string("end must be greater than or equal to start");
     }
+    // If the slice is completely out of range.
     if (end < 0 || start >= numBits) {
         return vec4state("x", end - start + 1);
     }
 
     vec4state result = vec4state("z", end - start + 1);
-    vec4state tmp = *this;
+    vec4state wanted = *this;
     // Move the bits to the right if the slice starts after index 0.
     if (start >= 0) {
-        tmp = tmp >> start;
+        wanted = wanted >> start;
     }
-    tmp = getPartValidRange(min(end, numBits - 1), max(start, (long long)(0)), tmp);
+    wanted.getPartValidRange(min(end + 1, numBits));
     
     // Extract the relevant bits from the vector.
-    result = result.bitwiseAndAvalBval(tmp);
+    result = result.bitwiseAndAvalBval(wanted);
     result.decNumBits(end - start + 1);
 
-    // If the slice ends after the last index.
+    // If the slice ends after the last index, put x's where the index is greater than the number of bits.
     if (end >= numBits) {
         result.setPartSelect(result.numBits - 1, numBits, vec4state("x", result.numBits - numBits)); 
     }
 
-    // If the slice starts before the 0.
+    // If the slice starts before the first index, put x's where the index is less than 0.
     if (start < 0) {
-        // Move the bits to the left if the slice starts becfore index 0.
+        // Move the bits to the left.
         result = result << (-start);
         // Put x's where the index is less than 0.
         result.setPartSelect(-start - 1, 0, vec4state("x", -start));
     }
     result.setUnknown();
-    return result;
+    return move(result);
 }
 
-// puts other in the range of start to end in this.
 void vec4state::setPartSelect(long long end, long long start, const vec4state& other) {
-    if (start <= end && end >= 0 && start < numBits) {
+    // If input is invalid.
+    if (end < start) {
+        throw string("end must be greater than or equal to start");
+    }
+    // If the slice is not completely out of range, perform the operation.
+    if (end >= 0 && start < numBits) {
         long long oldSize = numBits;
         vec4state other_copy = other;
         
         // Resizing other to the size of the slice.
-        other_copy = other_copy.changeNumBits(end - start + 1);
-        // In case the slice starts before the 0, move the bits to the right.
+        other_copy.setNumBits(end - start + 1);
+        // In case the slice starts before the first index, move the bits to the right.
         if (start < 0) {
             other_copy = other_copy >> (-start);
         }
@@ -601,12 +675,12 @@ void vec4state::setPartSelect(long long end, long long start, const vec4state& o
         end = min(end, numBits - 1);
 
         // Adjust the size of other to the size of the slice.
-        other_copy = other_copy.changeNumBits(end - start + 1);
+        other_copy.setNumBits(end - start + 1);
 
         // Save the bits before the slice.
         vec4state beforeStart = vec4state("0", 1);
         if (start > 0) {
-            beforeStart = getPartValidRange(start - 1, 0, *this);
+            beforeStart = getPartValidRange(start - 1);
         } 
         // Zero down the bits in the slice.
         *this = *this >> (end + 1);
@@ -617,9 +691,9 @@ void vec4state::setPartSelect(long long end, long long start, const vec4state& o
         // Move the starting bits back to their original position.
         *this = *this << start;
         *this = AdditionAvalBval(beforeStart);
-        decNumBits(oldSize);
+        setNumBits(oldSize);
     }
-    if (other.isUnknown) setUnknown();
+    if (other.unknown) setUnknown();
 }
 
 void vec4state::setPartSelect(long long end, long long start, long long num) {
@@ -669,10 +743,10 @@ vec4state vec4state::operator&&(const vec4state& other) const {
     }
 
     // If at least one of the vectors has all bits set to 0
-    if (first == 0 && !isUnknown) {
+    if (first == 0 && !unknown) {
         return vec4state("0", 1);
     }
-    if (second == 0 && !other.isUnknown) {
+    if (second == 0 && !other.unknown) {
         return vec4state("0", 1);
     }
 
@@ -712,7 +786,7 @@ vec4state vec4state::operator||(const vec4state& other) const {
     }
     // After checking all the bits
     // Now we know that both vectors have all bits set to 0 or are unknown
-    if (isUnknown || other.isUnknown) {
+    if (unknown || other.unknown) {
         return vec4state("x", 1);
     }
 
@@ -734,16 +808,14 @@ vec4state vec4state::operator!() const {
     // After checking all the bits
     // Now we know that the vector has all bits set to 0 or is unknown
     // If the vector has at least one bit set to x or z
-    if (isUnknown) {
-        return vec4state("x", 1);
-    }
+    if (unknown) return vec4state("x", 1);
 
     // If the vector has all bits set to 0
     return vec4state("1", 1);
 }
 
 vec4state vec4state::operator<(const vec4state& other) const {
-    if (isUnknown || other.isUnknown) {
+    if (unknown || other.unknown) {
         return vec4state("x", 1);
     }
     if (vectorSize > other.vectorSize) {
@@ -772,12 +844,20 @@ vec4state vec4state::operator<(const vec4state& other) const {
     return vec4state("0", 1);
 }
 
+vec4state vec4state::operator<(int num) const {
+    return *this < vec4state(num);
+}
+
 vec4state vec4state::operator<(long long num) const {
     return *this < vec4state(num);
 }
 
 vec4state vec4state::operator>(const vec4state& other) const {
     return other < *this;
+}
+
+vec4state vec4state::operator>(int num) const {
+    return *this > vec4state(num);
 }
 
 vec4state vec4state::operator>(long long num) const {
@@ -788,6 +868,10 @@ vec4state vec4state::operator<=(const vec4state& other) const {
     return ~(*this > other);
 }
 
+vec4state vec4state::operator<=(int num) const {
+    return *this <= vec4state(num);
+}
+
 vec4state vec4state::operator<=(long long num) const {
     return *this <= vec4state(num);
 }
@@ -796,21 +880,25 @@ vec4state vec4state::operator>=(const vec4state& other) const {
     return ~(*this < other);
 }
 
+vec4state vec4state::operator>=(int num) const {
+    return *this >= vec4state(num);
+}
+
 vec4state vec4state::operator>=(long long num) const {
     return *this >= vec4state(num);
 }
 
 vec4state vec4state::operator+(const vec4state& other) const {
     long long maxNumBits = max(numBits, other.numBits);
-    if (isUnknown || other.isUnknown) {
+    if (unknown || other.unknown) {
         return vec4state("x", maxNumBits);
     }
     vec4state result = vec4state("0", maxNumBits);
     // Align the vectors to the same size.
     vec4state copy_this = *this;
     vec4state copy_other = other;
-    copy_this.incNumBits(maxNumBits);
-    copy_other.incNumBits(maxNumBits);
+    copy_this.setNumBits(maxNumBits);
+    copy_other.setNumBits(maxNumBits);
     long long carry = 0;
     for (long long i = 0; i < maxNumBits; i++) {
         long long sum = long long(copy_this.vector[i].getAval()) + long long(copy_other.vector[i].getAval()) + carry;
@@ -828,7 +916,7 @@ vec4state vec4state::operator+(const vec4state& other) const {
         result.incNumBits(maxNumBits + 1);
         result.vector[maxNumBits].setAval(1);
     }
-    return result;
+    return move(result);
 }
 
 vec4state vec4state::operator+(long long num) const {
@@ -837,15 +925,15 @@ vec4state vec4state::operator+(long long num) const {
 
 vec4state vec4state::operator-(const vec4state& other) const {
     long long maxNumBits = max(numBits, other.numBits);
-    if (isUnknown || other.isUnknown) {
+    if (unknown || other.unknown) {
         return vec4state("x", maxNumBits);
     }
     vec4state result = vec4state("0", maxNumBits);
     // Align the vectors to the same size.
     vec4state copy_this = *this;
     vec4state copy_other = other;
-    copy_this.incNumBits(maxNumBits);
-    copy_other.incNumBits(maxNumBits);
+    copy_this.setNumBits(maxNumBits);
+    copy_other.setNumBits(maxNumBits);
     for (long long i = 0; i < maxNumBits; i++) {
         // If the current VPI in this vector is less than the corresponding one in other vector, borrow from the next VPI of this vector.
         if (copy_this.vector[i].getAval() < copy_other.vector[i].getAval()) {
@@ -868,7 +956,7 @@ vec4state vec4state::operator-(const vec4state& other) const {
                 for (long long j = 0; j < maxNumBits; j++) {
                     result.vector[j].setAval(copy_this.vector[j].getAval() - copy_other.vector[j].getAval());
                 }
-                return result;
+                return move(result);
             }
         }
         // Calculate the result as usual.
@@ -876,7 +964,7 @@ vec4state vec4state::operator-(const vec4state& other) const {
             result.vector[i].setAval(copy_this.vector[i].getAval() - copy_other.vector[i].getAval());
         }
     }
-    return result;
+    return move(result);
 }
 
 vec4state vec4state::operator-(long long num) const {
@@ -885,15 +973,15 @@ vec4state vec4state::operator-(long long num) const {
 
 vec4state vec4state::operator*(const vec4state& other) const {
     long long maxNumBits = max(numBits, other.numBits);
-    if (isUnknown || other.isUnknown) {
+    if (unknown || other.unknown) {
         return vec4state("x", maxNumBits);
     }
     vec4state result = vec4state("0", maxNumBits);
     // Align the vectors to the same size.
     vec4state copy_this = *this;
     vec4state copy_other = other;
-    copy_this.incNumBits(maxNumBits);
-    copy_other.incNumBits(maxNumBits);
+    copy_this.setNumBits(maxNumBits);
+    copy_other.setNumBits(maxNumBits);
     // for each VPI in this vector, multiply it by each VPI in other vector and add the result to the corresponding VPI in the result vector.
     long long carry = 0;
     for (int i_this = 0; i_this < maxNumBits; i_this++) {
@@ -915,7 +1003,7 @@ vec4state vec4state::operator*(const vec4state& other) const {
         result.incNumBits(maxNumBits + 1);
         result.vector[maxNumBits].setAval(uint32_t(carry));
     }
-    return result;
+    return move(result);
 }
 
 vec4state vec4state::operator*(long long num) const {
@@ -923,16 +1011,19 @@ vec4state vec4state::operator*(long long num) const {
 }
 
 vec4state vec4state::operator/(const vec4state& other) const {
+    if (other == vec4state(0)) {
+        throw string("Division by zero");
+    }
     long long maxNumBits = max(numBits, other.numBits);
-    if (isUnknown || other.isUnknown) {
+    if (unknown || other.unknown) {
         return vec4state("x", maxNumBits);
     }
     vec4state result = vec4state("0", maxNumBits);
     // Align the vectors to the same size.
     vec4state copy_this = *this;
     vec4state copy_other = other;
-    copy_this.incNumBits(maxNumBits);
-    copy_other.incNumBits(maxNumBits);
+    copy_this.setNumBits(maxNumBits);
+    copy_other.setNumBits(maxNumBits);
     // Divide the vectors using bit manipulation.
     while (copy_this >= copy_other) {
         long long shift = 0;
@@ -942,7 +1033,7 @@ vec4state vec4state::operator/(const vec4state& other) const {
         copy_this = copy_this - (copy_other << shift);
         result = result + (vec4state(1) << shift);
     }
-    return result;
+    return move(result);
 }
 
 vec4state vec4state::operator/(long long num) const {
@@ -950,15 +1041,18 @@ vec4state vec4state::operator/(long long num) const {
 }
 
 vec4state vec4state::operator%(const vec4state& other) const {
+    if (other == vec4state(0)) {
+        throw string("Division by zero");
+    }
     long long maxNumBits = max(numBits, other.numBits);
-    if (isUnknown || other.isUnknown) {
+    if (unknown || other.unknown) {
         return vec4state("x", maxNumBits);
     }
     // Align the vectors to the same size.
     vec4state copy_this = *this;
     vec4state copy_other = other;
-    copy_this.incNumBits(maxNumBits);
-    copy_other.incNumBits(maxNumBits);
+    copy_this.setNumBits(maxNumBits);
+    copy_other.setNumBits(maxNumBits);
     // Divide the vectors using bit manipulation and extract the remainder.
     while (copy_this >= copy_other) {
         long long shift = 0;
@@ -967,7 +1061,7 @@ vec4state vec4state::operator%(const vec4state& other) const {
         }
         copy_this = copy_this - (copy_other << shift);
     }
-    return copy_this;
+    return move(copy_this);
 }
 
 vec4state vec4state::operator%(long long num) const {
@@ -975,7 +1069,7 @@ vec4state vec4state::operator%(long long num) const {
 }
 
 vec4state vec4state::operator-() const {
-    if (isUnknown) {
+    if (unknown) {
         return vec4state("x", numBits);
     }
     return ~*this + vec4state(1);
@@ -984,28 +1078,24 @@ vec4state vec4state::operator-() const {
 vec4state vec4state::power(const vec4state& other) const {
     vec4state result;
     // If the base or the power has an unknown value, the result is unknown.
-    if (isUnknown || other.isUnknown) {
+    if (unknown || other.unknown) {
         result = vec4state("x", numBits);
     }
     // If the power is 0 or the base is 1, the result is 1.
     else if (other == vec4state(0) || *this == vec4state(1)) {
         result = vec4state(1);
-        result.incNumBits(numBits);
+        result.setNumBits(numBits);
     } else {
         result = *this;
         for (vec4state i = 2; i <= other; i = i + vec4state(1)) {
             result = result * *this;
         }
     }
-    return result;
+    return move(result);
 }
 
 vec4state vec4state::power(long long num) const {
     return power(vec4state(num));
-}
-
-long long vec4state::getNumBits() const {
-    return numBits;
 }
 
 string vec4state::toString() const {
@@ -1035,7 +1125,34 @@ string vec4state::toString() const {
 vec4state::operator bool() const {
     if (numBits == 1 && vector[0].getAval() == 1 && vector[0].getBval() == 0) {
         return true;
-    } else {
+    } else if (numBits == 1 && vector[0].getAval() == 0 && vector[0].getBval() == 0) {
         return false;
+    } else {
+        throw string("Unknown value cannot be converted to bool");
     }
+}
+
+void vec4state::convertToTwoState() {
+    for (int i = 0; i < vectorSize; i++) {
+        // Remove the bits of the z's.
+        vector[i].setAval(vector[i].getAval() - (vector[i].getAval() & vector[i].getBval()));
+        // Zero down the unknown bits.
+        vector[i].setBval(0);
+    }
+}
+
+long long vec4state::getNumBits() const {
+    return numBits;
+}
+
+VPI* vec4state::getVector() const {
+    return vector;
+}
+
+long long vec4state::getVectorSize() const {
+    return vectorSize;
+}
+
+bool vec4state::isUnknown() const {
+    return unknown;
 }
