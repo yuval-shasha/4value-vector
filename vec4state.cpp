@@ -22,9 +22,10 @@ void vec4state::incNumBits(long long newNumBits) {
     if (newNumBits <= 0) {
         throw string("Number of bits must be positive");
     }
-    if (newNumBits <= numBits) {
+    if (newNumBits < numBits) {
         throw string("Number of bits must be greater than the current number of bits");
     }
+    if (newNumBits == numBits) return;
     long long oldVectorSize = vectorSize;
     numBits = newNumBits;
     vectorSize = calcVectorSize(numBits);
@@ -45,9 +46,10 @@ void vec4state::decNumBits(long long newNumBits) {
     if (newNumBits < 0) {
         throw string("Number of bits must be non-negative");
     }
-    if (newNumBits >= numBits) {
+    if (newNumBits > numBits) {
         throw string("Number of bits must be less than the current number of bits");
     }
+    if (newNumBits == numBits) return;
     if (newNumBits == 0) {
         *this = vec4state("x", 1);
         return;
@@ -273,7 +275,7 @@ vec4state::vec4state(const vec4state& other) : numBits(other.numBits), vectorSiz
     }
 }
 
-vec4state::vec4state(vec4state&& other) : numBits(other.numBits), vectorSize(other.vectorSize), unknown(other.unknown), vector(other.vector) {
+vec4state::vec4state(vec4state&& other) noexcept : numBits(other.numBits), vectorSize(other.vectorSize), unknown(other.unknown), vector(other.vector) {
     other.vector = nullptr;
 }
 
@@ -1128,6 +1130,7 @@ vec4state::operator bool() const {
     } else if (numBits == 1 && vector[0].getAval() == 0 && vector[0].getBval() == 0) {
         return false;
     } else {
+        // Should we throw an exception in this case or treat it as false?
         throw string("Unknown value cannot be converted to bool");
     }
 }

@@ -51,7 +51,7 @@ class vec4state
         // Copy c'tor
         vec4state(const vec4state& other);
         // Move c'tor
-        vec4state(vec4state&& other);
+        vec4state(vec4state&& other) noexcept;
 
         // D'tor
         ~vec4state();

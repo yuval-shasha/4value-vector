@@ -77,16 +77,28 @@ TEST_F(vec4stateTest, TestStringConstructor) {
 
 // Checks that the copy constructor creates a vector that has the same value and number of bits as the vector passed to it.
 TEST_F(vec4stateTest, TestCopyConstructor) {
-    vec4state copyVector = vec4state(stringVector);
+    vec4state copyVector = stringVector;
     EXPECT_TRUE(compareVectorToString(copyVector, string("01xz11")));
     EXPECT_TRUE(checkVectorSize(copyVector, 6));
 }
 
-// Checks that the assignment operator from another vector creates a vector that has the same value and number of bits as the vector passed to it.
-TEST_F(vec4stateTest, TestCopyAssignment) {
-    vec4state copy = defaultVector;
+// Checks that the move constructor transfers the ownership of the original vector's resources to the destination vector.
+TEST_F(vec4stateTest, TestMoveConstructor) {
+    EXPECT_TRUE(compareVectorToString(stringVector, string("01xz11")));
+    vec4state moveVector = move(stringVector);
+    EXPECT_EQ(stringVector.getVector(), nullptr);
+    EXPECT_TRUE(compareVectorToString(moveVector, string("01xz11")));
+    EXPECT_TRUE(checkVectorSize(moveVector, 6));
+}
+
+// Checks that the assignment operator from another vector changes the destination vector to hold the same values as the vector assigned to it.
+TEST_F(vec4stateTest, TestAssignmentFromVector) {
+    vec4state copy;
     EXPECT_TRUE(compareVectorToString(copy, string("x")));
     EXPECT_TRUE(checkVectorSize(copy, 1));
+    copy = stringVector;
+    EXPECT_TRUE(compareVectorToString(copy, string("01xz11")));
+    EXPECT_TRUE(checkVectorSize(copy, 6));
 }
 
 // Checks that the assignment operator from an integer creates a 32-bit vector that stores the value of the integer passed to it.
@@ -1043,4 +1055,28 @@ TEST_F(vec4stateTest, TestRelationalIntVectorGreaterThanEqualToStringVector) {
 
 TEST_F(vec4stateTest, TestRelationalZeroesVectorGreaterThanEqualToOnesVector) {
     EXPECT_FALSE(zeroesVector >= onesVector);
+}
+
+// General tests for the vec4state class.
+// Checks the behaviour of all the operators and methods together.
+TEST(vec4stateGeneralTest, TestAllTogether) {
+    vec4state vector_int = vec4state(123);
+    vec4state vector_binary = vec4state("101101000");
+    vec4state vector_unknown = vec4state("x101zxx100");
+    vec4state vector_zeroes = vec4state("000000000");
+    vec4state vector_ones = vec4state("111111111");
+}
+
+// Generates a random 4-state vector of a random length between 1 and 10000000000000.
+string generateString() {
+    string result;
+    char states[] = {'0', '1', 'x', 'z'};
+
+    // Generate a random length between 1 and 10000000000000
+    long long length = rand() % 10000000000000 + 1;
+    for (long long i = 0; i < length; i++) {
+        // Select a random state from the four possible states
+        result += states[rand() % 4];
+    }
+    return result;
 }
