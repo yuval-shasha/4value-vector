@@ -778,7 +778,11 @@ TEST_F(vec4stateTest, TestSetPartSelectIntVectorToString) {
 }
 
 TEST_F(vec4stateTest, TestSetPartSelectIntVectorToStringVector) {
-    intVector.setPartSelect(10, 4, stringVector);
+    try{
+        intVector.setPartSelect(10, 4, stringVector);
+    } catch (string& s) {
+        cout << s << endl;
+    }
     EXPECT_TRUE(compareVectorToString(intVector, string("000100100011010001010001xz111000")));
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
@@ -1055,6 +1059,19 @@ TEST_F(vec4stateTest, TestRelationalIntVectorGreaterThanEqualToStringVector) {
 
 TEST_F(vec4stateTest, TestRelationalZeroesVectorGreaterThanEqualToOnesVector) {
     EXPECT_FALSE(zeroesVector >= onesVector);
+}
+
+// Tests the addition of integer vector with itself.
+TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithItself) {
+    vec4state addVector = intVector + intVector;
+    EXPECT_TRUE(compareVectorToString(addVector, string("00100100011010001010110011110000")));
+    EXPECT_TRUE(checkVectorSize(addVector, 32));
+}
+
+// Tests the addition of integer vector with string vector.
+TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithStringVector) {
+    EXPECT_TRUE(compareVectorToString(intVector + stringVector, string("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")));
+    EXPECT_TRUE(checkVectorSize(intVector + stringVector, 32));
 }
 
 // General tests for the vec4state class.

@@ -137,13 +137,13 @@ void vec4state::setNumBits(long long newNumBits) {
 
 vec4state vec4state::getPartValidRange(long long end) const {
     if (end < 0) throw string("end must be non-negative");
-    if (end >= numBits) {
+    if (end > numBits) {
         throw string("end must be less than the number of bits in the vector");
     }
     vec4state result = vec4state("z", end);
     for (long long i = 0; i < result.vectorSize; i++) {
-        result.vector[i].setAval(vector[i].getAval());
-        result.vector[i].setBval(vector[i].getBval());
+        result.vector[i].setAval(vector[i].getAval() & result.vector[i].getAval());
+        result.vector[i].setBval(vector[i].getBval() & result.vector[i].getBval());
     }
     result.setUnknown();
     return move(result);
@@ -153,6 +153,8 @@ vec4state::vec4state() : vector(nullptr) {
     vector = new VPI[1];
     numBits = 1;
     vectorSize = 1;
+    // Plaster? aka bandaid?
+    vector[0].setBval(1);
     unknown = false;
 }
 
@@ -682,7 +684,7 @@ void vec4state::setPartSelect(long long end, long long start, const vec4state& o
         // Save the bits before the slice.
         vec4state beforeStart = vec4state("0", 1);
         if (start > 0) {
-            beforeStart = getPartValidRange(start - 1);
+            beforeStart = getPartValidRange(start);
         } 
         // Zero down the bits in the slice.
         *this = *this >> (end + 1);
@@ -902,7 +904,7 @@ vec4state vec4state::operator+(const vec4state& other) const {
     copy_this.setNumBits(maxNumBits);
     copy_other.setNumBits(maxNumBits);
     long long carry = 0;
-    for (long long i = 0; i < maxNumBits; i++) {
+    for (long long i = 0; i < result.vectorSize; i++) {
         long long sum = long long(copy_this.vector[i].getAval()) + long long(copy_other.vector[i].getAval()) + carry;
         // Put in the result vector only the lower 32 bits of the sum.
         result.vector[i].setAval(uint32_t(sum & 0xFFFFFFFF));
@@ -936,7 +938,7 @@ vec4state vec4state::operator-(const vec4state& other) const {
     vec4state copy_other = other;
     copy_this.setNumBits(maxNumBits);
     copy_other.setNumBits(maxNumBits);
-    for (long long i = 0; i < maxNumBits; i++) {
+    for (long long i = 0; i < copy_this.getVectorSize(); i++) {
         // If the current VPI in this vector is less than the corresponding one in other vector, borrow from the next VPI of this vector.
         if (copy_this.vector[i].getAval() < copy_other.vector[i].getAval()) {
             // Find the first next VPI in this vector that is not zero.
