@@ -19,6 +19,7 @@ protected:
     vec4state zeroAndZVector = vec4state("0z");
     vec4state zeroesVector = vec4state("00");
     vec4state zThenZeroesVector = vec4state("z00");
+    vec4state negativeVector = vec4state(-1);
 };
 
 // Compares the string representation of the vector with the given string.
@@ -103,21 +104,30 @@ TEST_F(vec4stateTest, TestAssignmentFromVector) {
 
 // Checks that the assignment operator from an integer creates a 32-bit vector that stores the value of the integer passed to it.
 TEST_F(vec4stateTest, TestIntegerAssignment) {
-    vec4state copy = 0x12345678;
+    vec4state copy;
+    EXPECT_TRUE(compareVectorToString(copy, string("x")));
+    EXPECT_TRUE(checkVectorSize(copy, 1));
+    copy = 0x12345678;
     EXPECT_TRUE(compareVectorToString(copy, string("00010010001101000101011001111000")));
     EXPECT_TRUE(checkVectorSize(copy, 32));
 }
 
 // Checks that the assignment operator from a long long number creates a 64-bit vector that stores the value of the long long number passed to it.
 TEST_F(vec4stateTest, TestLongLongAssignment) {
-    vec4state copy = 0x1234567890ABCDEF;
+    vec4state copy;
+    EXPECT_TRUE(compareVectorToString(copy, string("x")));
+    EXPECT_TRUE(checkVectorSize(copy, 1));
+    copy = 0x1234567890ABCDEF;
     EXPECT_TRUE(compareVectorToString(copy, string("0001001000110100010101100111100010010000101010111100110111101111")));
     EXPECT_TRUE(checkVectorSize(copy, 64));
 }
 
 // Checks that the assignment operator from a string creates a vector that has the same value as the string passed to it and it's number of bits is equal to the length of the string.
 TEST_F(vec4stateTest, TestStringAssignment) {
-    vec4state copy = "01xz11";
+    vec4state copy;
+    EXPECT_TRUE(compareVectorToString(copy, string("x")));
+    EXPECT_TRUE(checkVectorSize(copy, 1));
+    copy = "01xz11";
     EXPECT_TRUE(compareVectorToString(copy, string("01xz11")));
     EXPECT_TRUE(checkVectorSize(copy, 6));
 }
@@ -533,179 +543,204 @@ TEST_F(vec4stateTest, TestXVectorCaseInequalityWithZVector) {
     EXPECT_TRUE(xVector.caseInequality(zVector));
 }
 
-// Checks that the result of shifting a vector that holds an integer to the left by two bits is the same as the integer shifted to the left by two bits. The result should have the same number of bits as the original vector.
+// Checks that the result of shifting a vector that holds an integer (32 bits) to the left by two bits is the same as the integer shifted to the left by two bits. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftIntVectorByTwo) {
     vec4state shiftLeftVector = intVector << 2;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("01001000110100010101100111100000")));
     EXPECT_TRUE(checkVectorSize(shiftLeftVector, 32));
 }
 
-// Checks that the result of shifting a vector that holds an integer to the left by thirty two bits is a vector that holds only zeroes. The result should have the same number of bits as the original vector.
+// Checks that the result of shifting a vector that holds an integer (32 bits) to the left by thirty two bits is a vector that holds only zeroes. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftIntVectorByThirtyTwo) {
     vec4state shiftLeftVector = intVector << 32;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("00000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(shiftLeftVector, 32));
 }
 
-// Checks that the result of shifting a vector that holds a long long number to the left by two bits is the same as the long long number shifted to the left by two bits. The result should have the same number of bits as the original vector.
+// Checks that the result of shifting a vector that holds a long long number (64 bits) to the left by two bits is the same as the long long number shifted to the left by two bits. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftLongLongVectorByTwo) {
     vec4state shiftLeftVector = longLongVector << 2;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("0100100011010001010110011110001001000010101011110011011110111100")));
     EXPECT_TRUE(checkVectorSize(shiftLeftVector, 64));
 }
 
-// Checks that the result of shifting a vector that holds a long long number to the left by sixty four bits is a vector that holds only zeroes. The result should have the same number of bits as the original vector.
+// Checks that the result of shifting a vector that holds a long long number (64 bits) to the left by sixty four bits is a vector that holds only zeroes. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftLongLongVectorBySixtyFour) {
     vec4state shiftLeftVector = longLongVector << 64;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("0000000000000000000000000000000000000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(shiftLeftVector, 64));
 }
 
-// Checks that the result of shifting a vector that holds a long long number to the left by thirty five bits is the same as the long long number shifted to the left by thirty five bits. The result should have the same number of bits as the original vector.
+// Checks that the result of shifting a vector that holds a long long number (64 bits) to the left by thirty five bits is the same as the long long number shifted to the left by thirty five bits. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftLongLongVectorByThirtyFive) {
     vec4state shiftLeftVector = longLongVector << 35;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("1000010101011110011011110111100000000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(shiftLeftVector, 64));
 }
 
+// Checks that the result of shifting an unknown vector that holds 6 bits is the same vector shifted to the right by 2 bits. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftStringVectorByTwo) {
     vec4state shiftLeftVector = stringVector << 2;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("xz1100")));
     EXPECT_TRUE(checkVectorSize(shiftLeftVector, 6));
 }
 
+// Checks that the result of shifting an unknown vector that holds 108 bits to the left by seventy bits is the same vector shifted to the left by seventy bits. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftBigVectorBySeventy) {
     vec4state shiftLeftVector = bigVector << 70;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("zx0110011xzx0111zzzx0110011xzx0111zzzx0000000000000000000000000000000000000000000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(shiftLeftVector, 108));
 }
 
+// Checks that the result of shifting a vector that holds 108 bits to the left by an unknown value is only x's. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftBigVectorBySmallVector) {
     vec4state shiftLeftVector = bigVector << stringVector;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")));
     EXPECT_TRUE(checkVectorSize(shiftLeftVector, 108));
 }
 
+// Checks that the result of shifting an unknown vector that holds 108 bits to the left by a vector that holds the number 3 in binary is the same vector shifted to the left by 3. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftBigVectorByOnesVector) {
     vec4state shiftLeftVector = bigVector << onesVector;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("0011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx000")));
     EXPECT_TRUE(checkVectorSize(shiftLeftVector, 108));
 }
 
+// Checks that the result of shifting an unknown vector that holds 108 bits to the left by a vector that holds an integer gretaer than 108 is only zeroes. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftLeftBigVectorByIntVector) {
     vec4state shiftLeftVector = bigVector << intVector;
     EXPECT_TRUE(compareVectorToString(shiftLeftVector, string("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(shiftLeftVector, 108));
 }
 
+// Checks that the result of shifting a vector that holds an integer (32 bits) to the right by two bits is the same as the integer shifted to the right by two bits. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftRightIntVectorByTwo) {
     vec4state shiftRightVector = intVector >> 2;
     EXPECT_TRUE(compareVectorToString(shiftRightVector, string("00000100100011010001010110011110")));
     EXPECT_TRUE(checkVectorSize(shiftRightVector, 32));
 }
 
+// Checks that the result of shifting a vector that holds an integer (32 bits) to the right by thirty two bits is a vector that holds only zeroes. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftRightIntVectorByThirtyTwo) {
     vec4state shiftRightVector = intVector >> 32;
     EXPECT_TRUE(compareVectorToString(shiftRightVector, string("00000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(shiftRightVector, 32));
 }
 
+// Checks that the result of shifting a vector that holds a long long number (64 bits) to the right by two bits is the same as the long long number shifted to the right by two bits. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftRightLongLongVectorByTwo) {
     vec4state shiftRightVector = longLongVector >> 2;
     EXPECT_TRUE(compareVectorToString(shiftRightVector, string("0000010010001101000101011001111000100100001010101111001101111011")));
     EXPECT_TRUE(checkVectorSize(shiftRightVector, 64));
 }
 
+// Checks that the result of shifting a vector that holds a long long number (64 bits) to the right by sixty four bits is a vector that holds only zeroes. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftRightLongLongVectorBySixtyFour) {
     vec4state shiftRightVector = longLongVector >> 64;
     EXPECT_TRUE(compareVectorToString(shiftRightVector, string("0000000000000000000000000000000000000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(shiftRightVector, 64));
 }
 
+// Checks that the result of shifting a vector that holds a long long number (64 bits) to the right by thirty five bits is the same as the long long number shifted to the right by thirty five bits. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftRightLongLongVectorByThirtyFive) {
     vec4state shiftRightVector = longLongVector >> 35;
     EXPECT_TRUE(compareVectorToString(shiftRightVector, string("0000000000000000000000000000000000000010010001101000101011001111")));
     EXPECT_TRUE(checkVectorSize(shiftRightVector, 64));
 }
 
+// Checks that the result of shifting an unknown vector that holds 6 bits to the right by 2 is the same vector shifted to the right by 2 bits. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftRightStringVectorByTwo) {
     vec4state shiftRightVector = stringVector >> 2;
     EXPECT_TRUE(compareVectorToString(shiftRightVector, string("0001xz")));
     EXPECT_TRUE(checkVectorSize(shiftRightVector, 6));
 }
 
+// Checks that the result of shifting an unknown vector that holds 108 bits to the right by seventy bits is the same vector shifted to the right by seventy bits. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftRightBigVectorBySeventy) {
     vec4state shiftRightVector = bigVector >> 70;
     EXPECT_TRUE(compareVectorToString(shiftRightVector, string("00000000000000000000000000000000000000000000000000000000000000000000000110011xzx0111zzzx0110011xzx0111zzzx01")));
     EXPECT_TRUE(checkVectorSize(shiftRightVector, 108));
 }
 
+// Checks that the result of shifting an unknown vector that holds 108 bits to the right by an unknown vector is a vector that holds only x's. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftRightBigVectorBySmallVector) {
     vec4state shiftRightVector = bigVector >> stringVector;
     EXPECT_TRUE(compareVectorToString(shiftRightVector, string("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")));
     EXPECT_TRUE(checkVectorSize(shiftRightVector, 108));
 }
 
+// Checks that the result of shifting an unknown vector that holds 108 bits to the right by a vector that holds the number 3 in binary is the same vector shifted to the right by 3. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftRightBigVectorByOnesVector) {
     vec4state shiftRightVector = bigVector >> onesVector;
     EXPECT_TRUE(compareVectorToString(shiftRightVector, string("0000110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111z")));
     EXPECT_TRUE(checkVectorSize(shiftRightVector, 108));
 }
 
+// Checks that the result of shifting an unknown vector that holds 108 bits to the right by a vector that holds an integer gretaer than 108 is only zeroes. The result should have the same number of bits as the original vector.
 TEST_F(vec4stateTest, TestShiftRightBigVectorByIntVector) {
     vec4state shiftRightVector = bigVector >> intVector;
     EXPECT_TRUE(compareVectorToString(shiftRightVector, string("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")));
     EXPECT_TRUE(checkVectorSize(shiftRightVector, 108));
 }
 
+// Checks that accessing the bit at index 2 of a vector that holds an integer (32 bits) returns the value of the third bit in the vector.
 TEST_F(vec4stateTest, TestGetBitSelectIntVector) {
     vec4state indexVector = intVector.getBitSelect(2);
     EXPECT_TRUE(compareVectorToString(indexVector, string("0")));
     EXPECT_TRUE(checkVectorSize(indexVector, 1));
 }
 
+// Checks that accessing the bit at index 32 of a vector that holds an integer (32 bits) returns x (because it is out of bounds).
 TEST_F(vec4stateTest, TestGetTooHighBitSelectIntVector) {
     vec4state indexVector = intVector.getBitSelect(32);
     EXPECT_TRUE(compareVectorToString(indexVector, string("x")));
     EXPECT_TRUE(checkVectorSize(indexVector, 1));
 }
 
+// Checks that accessing the bit at index -1 of a vector that holds an integer (32 bits) returns x (because it is out of bounds).
 TEST_F(vec4stateTest, TestGetTooLowBitSelectIntVector) {
     vec4state indexVector = intVector.getBitSelect(-1);
     EXPECT_TRUE(compareVectorToString(indexVector, string("x")));
     EXPECT_TRUE(checkVectorSize(indexVector, 1));
 }
 
+// Checks that accessing the bit at index 2 of an unknown vector that holds 6 bits returns the value of the thirds bit in the vector.
 TEST_F(vec4stateTest, TestGetBitSelectStringVector) {
     vec4state indexVector = stringVector.getBitSelect(2);
     EXPECT_TRUE(compareVectorToString(indexVector, string("z")));
     EXPECT_TRUE(checkVectorSize(indexVector, 1));
 }
 
+// Checks that accessing the bit at index 70 of an unknown vector that holds 108 bits returns the value of the seventy first bit in the vector.
 TEST_F(vec4stateTest, TestGetBitSelectBigVector) {
     vec4state indexVector = bigVector.getBitSelect(70);
     EXPECT_TRUE(compareVectorToString(indexVector, string("1")));
     EXPECT_TRUE(checkVectorSize(indexVector, 1));
 }
 
+// Checks that accessing the bit at an unknown index (unknown vector) of a vector that holds an integer (32 bits) returns x.
 TEST_F(vec4stateTest, TestGetUnknownBitSelectIntVector) {
     vec4state indexVector = intVector.getBitSelect(stringVector);
     EXPECT_TRUE(compareVectorToString(indexVector, string("x")));
     EXPECT_TRUE(checkVectorSize(indexVector, 1));
 }
 
+// Checks that setting the first bit of a vector that holds 00 to 1 changes the vector to 01.
 TEST_F(vec4stateTest, TestSetBitSelectZeroesVector) {
     zeroesVector.setBitSelect(0, 1);
     EXPECT_TRUE(compareVectorToString(zeroesVector, string("01")));
     EXPECT_TRUE(checkVectorSize(zeroesVector, 2));
 }
 
+// Checks that setting the thirty second bit of a vector that holds an integer (32 bits) to 1 doesn't change the vector (because it is out of bounds).
 TEST_F(vec4stateTest, TestSetTooHighBitSelectIntVector) {
+    vec4state beforeSet = intVector;
     intVector.setBitSelect(32, 1);
-    EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111000")));
+    EXPECT_TRUE(intVector == beforeSet);
     EXPECT_TRUE(checkVectorSize(intVector, 32));
 }
 
+// Checks that setting the negative first bit of a vector that holds an integer (32 bits) to 1 doesn't change the vector (because it is out of bounds).
 TEST_F(vec4stateTest, TestSetTooLowBitSelectIntVector) {
     intVector.setBitSelect(-1, 1);
     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111000")));
@@ -1061,17 +1096,31 @@ TEST_F(vec4stateTest, TestRelationalZeroesVectorGreaterThanEqualToOnesVector) {
     EXPECT_FALSE(zeroesVector >= onesVector);
 }
 
-// Tests the addition of integer vector with itself.
+// Tests the addition of known vector with itself.
 TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithItself) {
     vec4state addVector = intVector + intVector;
     EXPECT_TRUE(compareVectorToString(addVector, string("00100100011010001010110011110000")));
     EXPECT_TRUE(checkVectorSize(addVector, 32));
 }
 
-// Tests the addition of integer vector with string vector.
+// Tests the addition of vector with unknown vector.
 TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithStringVector) {
     EXPECT_TRUE(compareVectorToString(intVector + stringVector, string("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")));
     EXPECT_TRUE(checkVectorSize(intVector + stringVector, 32));
+}
+
+// Tests the addition of vector with an int number.
+TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithNumber) {
+    vec4state addVector = intVector + 0x12345678;
+    EXPECT_TRUE(compareVectorToString(addVector, string("00100100011010001010110011110000")));
+    EXPECT_TRUE(checkVectorSize(addVector, 32));
+}
+
+// Tests the addition of vector with an int number that causes carry.
+TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithNumberCarry) {
+    vec4state addVector = intVector + 0xFF123456;
+    EXPECT_TRUE(compareVectorToString(addVector, string("100010001010001101000101011001110")));
+    EXPECT_TRUE(checkVectorSize(addVector, 33));
 }
 
 // General tests for the vec4state class.

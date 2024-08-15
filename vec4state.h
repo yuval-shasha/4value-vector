@@ -43,6 +43,7 @@ class vec4state
         // Initializes a 32-bit vector, all bits initialized to x
         vec4state();
         // Initializes a 32-bit vector to the value of num
+        vec4state(unsigned int num);
         vec4state(int num);
         // Initializes a 64-bit vector to the value of num
         vec4state(long long num);
@@ -139,6 +140,8 @@ class vec4state
         // Arithmetic operators
         vec4state operator+(const vec4state& other) const;
         vec4state operator+(long long num) const;
+        vec4state operator+(int num) const;
+        vec4state operator+(unsigned int num) const;
         vec4state operator-(const vec4state& other) const;
         vec4state operator-(long long num) const;
         vec4state operator*(const vec4state& other) const;

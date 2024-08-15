@@ -153,8 +153,16 @@ vec4state::vec4state() : vector(nullptr) {
     vector = new VPI[1];
     numBits = 1;
     vectorSize = 1;
-    // Plaster? aka bandaid?
     vector[0].setBval(1);
+    unknown = false;
+}
+
+vec4state::vec4state(unsigned int num) : vector(nullptr) {
+    vector = new VPI[1];
+    numBits = 32;
+    vectorSize = 1;
+    vector[0].setAval(num);
+    vector[0].setBval(0);
     unknown = false;
 }
 
@@ -905,7 +913,7 @@ vec4state vec4state::operator+(const vec4state& other) const {
     copy_other.setNumBits(maxNumBits);
     long long carry = 0;
     for (long long i = 0; i < result.vectorSize; i++) {
-        long long sum = long long(copy_this.vector[i].getAval()) + long long(copy_other.vector[i].getAval()) + carry;
+        long long sum = unsigned long long(copy_this.vector[i].getAval()) + unsigned long long(copy_other.vector[i].getAval()) + carry;
         // Put in the result vector only the lower 32 bits of the sum.
         result.vector[i].setAval(uint32_t(sum & 0xFFFFFFFF));
         // If the sum is bigger than 32 bits, set the carry to 1 for the next iteration.
@@ -918,12 +926,20 @@ vec4state vec4state::operator+(const vec4state& other) const {
     // If there is a carry in the last iteration, increase the size of the result vector by 1.
     if (carry) {
         result.incNumBits(maxNumBits + 1);
-        result.vector[maxNumBits].setAval(1);
+        result.vector[result.vectorSize - 1].setAval(1);
     }
     return move(result);
 }
 
 vec4state vec4state::operator+(long long num) const {
+    return *this + vec4state(num);
+}
+
+vec4state vec4state::operator+(int num) const {
+    return *this + vec4state(num);
+}
+
+vec4state vec4state::operator+(unsigned int num) const {
     return *this + vec4state(num);
 }
 
