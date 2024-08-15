@@ -416,6 +416,7 @@ vec4state vec4state::operator~() const {
     return move(result);
 }
 
+// TODO: do we need to check all the avals and than all the bvals?
 vec4state vec4state::operator==(const vec4state& other) const {
     vec4state xorVector = *this ^ other;
     for (long long i = 0; i < xorVector.vectorSize; i++) {
