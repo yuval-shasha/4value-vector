@@ -724,18 +724,18 @@ vec4state vec4state::operator||(const vec4state& other) const {
 }
 
 vec4state vec4state::operator!() const {
-    // If the vector is unknown, return x.
-    if (unknown) {
-        return vec4state("x", 1);
-    }
-    // If the vector has at least one bit set to 1, return true.
-    for (long long i = 0; i < vectorSize; i++) {
+    // If the vector has at least one bit set to 1, return 0.
+    for (int i = 0; i < vectorSize; i++) {
         // Extract the bits that are 1.
-        uint32_t oneBits = vector[i].getAval() - (vector[i].getAval() & vector[i].getBval());
-        if (oneBits) return true;
+        uint32_t tmp = vector[i].getAval() - (vector[i].getAval() & vector[i].getBval());
+        if (tmp != 0) {
+            return vec4state("0", 1);
+        }
     }
-    // If the vector has only 0 bits, return false.
-    return false;
+    // If the vector has at least one bit set to x or z, return x.
+    if (unknown) return vec4state("x", 1);
+    // If the vector has only 0 bits, return 1.
+    return vec4state("1", 1);
 }
 
 vec4state vec4state::operator<(const vec4state& other) const {
@@ -990,25 +990,16 @@ string vec4state::toString() const {
     return result;
 }
 
-// Returns true if vec holds 1, returns false if vec holds 0 or x.
-bool convertToBool(const vec4state& vec) {
-    VPI* subVector = vec.getVector();
-    if (subVector == nullptr || vec.getNumBits() != 1) {
-        throw string("Invalid vector");
-    }
-    if (subVector[0].getAval() == 1) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
 vec4state::operator bool() const {
-    if (convertToBool(!(*this))) {
-        return false;
-    } else {
-        return true;
+    // If the vector has at least one bit set to 1, return true.
+    for (long long i = 0; i < vectorSize; i++) {
+        uint32_t tmp = vector[i].getAval() - (vector[i].getAval() & vector[i].getBval());
+        if (tmp != 0) {
+            return true;
+        }
     }
+    // If the vector has all bits set to 0 or has unknown bits, return false.
+    return false;
 }
 
 void vec4state::convertTo2State() {
