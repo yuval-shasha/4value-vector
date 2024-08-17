@@ -318,7 +318,6 @@ TEST_F(vec4stateTest, TestStringVectorEqualityWithItself) {
     vec4state eqVector = stringVector == stringVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
-    EXPECT_FALSE(stringVector == stringVector);
 }
 
 // Checks that the result of logical equality between a 108-bit vector that holds unknown values and itself returns an unknown value.
@@ -326,7 +325,6 @@ TEST_F(vec4stateTest, TestBigVectorEqualityWithItself) {
     vec4state eqVector = bigVector == bigVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
-    EXPECT_FALSE(bigVector == bigVector);
 }
 
 // Checks that the result of logical equality between a vector that holds an integer and a vector that holds a long long number (that have common lower 32-bits) is false.
@@ -365,7 +363,6 @@ TEST_F(vec4stateTest, TestOnesVectorEqualityWithXVector) {
     vec4state eqVector = onesVector == xVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
-    EXPECT_FALSE(onesVector == xVector);
 }
 
 // Checks that the result of logical equality between a vector that holds only ones and a vector that holds only z's is unknown.
@@ -373,7 +370,6 @@ TEST_F(vec4stateTest, TestOnesVectorEqualityWithZVector) {
     vec4state eqVector = onesVector == zVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
-    EXPECT_FALSE(onesVector == zVector);
 }
 
 // Checks that the result of logical equality between a vector that holds two 1's and a vector that holds a one and an x is unknown.
@@ -381,7 +377,6 @@ TEST_F(vec4stateTest, TestOnesVectorEqualityWithOneAndXVector) {
     vec4state eqVector = onesVector == oneAndXVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
-    EXPECT_FALSE(onesVector == oneAndXVector);
 }
 
 // Checks that the result of logical equality between a vector that holds two 1's and a vector that holds a zero and a z is false.
@@ -394,7 +389,6 @@ TEST_F(vec4stateTest, TestXVectorEqualityWithZVector) {
     vec4state eqVector = xVector == zVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
-    EXPECT_FALSE(xVector == zVector);
 }
 
 // Checks that the result of logical equality between a 1's vector and the same vector with x in it's MSB is unknown.
@@ -402,7 +396,6 @@ TEST_F(vec4stateTest, TestOnesVectorEqualityWithXThenOnesVector) {
     vec4state eqVector = onesVector == xThenOnesVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
-    EXPECT_FALSE(onesVector == xThenOnesVector);
 }
 
 // Checks that the result of logical equality between a 0's vector and the same vector with z in it's MSB is unknown.
@@ -410,7 +403,6 @@ TEST_F(vec4stateTest, TestZeroesVectorEqualityWithZThenZeroesVector) {
     vec4state eqVector = zeroesVector == zThenZeroesVector;
     EXPECT_TRUE(compareVectorToString(eqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(eqVector, 1));
-    EXPECT_FALSE(zeroesVector == zThenZeroesVector);
 }
 
 // Checks that the result of logical inequality between a vector that holds an integer and itself is false.
@@ -443,7 +435,6 @@ TEST_F(vec4stateTest, TestStringVectorInequalityWithItself) {
     vec4state neqVector = stringVector != stringVector;
     EXPECT_TRUE(compareVectorToString(neqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(neqVector, 1));
-    EXPECT_FALSE(stringVector != stringVector);
 }
 
 // Checks that the result of logical inequality between a vector that holds only ones and a vector that holds only x's is unknown.
@@ -451,7 +442,6 @@ TEST_F(vec4stateTest, TestOnesVectorInequalityWithXVector) {
     vec4state neqVector = onesVector != xVector;
     EXPECT_TRUE(compareVectorToString(neqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(neqVector, 1));
-    EXPECT_FALSE(onesVector != xVector);
 }
 
 // Checks that the result of logical inequality between a vector that holds only ones and a vector that holds only z's is unknown.
@@ -459,7 +449,6 @@ TEST_F(vec4stateTest, TestOnesVectorInequalityWithZVector) {
     vec4state neqVector = onesVector != zVector;
     EXPECT_TRUE(compareVectorToString(neqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(neqVector, 1));
-    EXPECT_FALSE(onesVector != zVector);
 }
 
 // Checks that the result of logical inequality between a vector that holds two 1's and a vector that holds a one and an x is unknown.
@@ -467,7 +456,6 @@ TEST_F(vec4stateTest, TestOnesVectorInequalityWithOneAndXVector) {
     vec4state neqVector = onesVector != oneAndXVector;
     EXPECT_TRUE(compareVectorToString(neqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(neqVector, 1));
-    EXPECT_FALSE(onesVector != oneAndXVector);
 }
 
 // Checks that the result of logical inequality between a vector that holds two 1's and a vector that holds a zero and a z is true.
@@ -480,7 +468,6 @@ TEST_F(vec4stateTest, TestXVectorInequalityWithZVector) {
     vec4state neqVector = xVector != zVector;
     EXPECT_TRUE(compareVectorToString(neqVector, string("x")));
     EXPECT_TRUE(checkVectorSize(neqVector, 1));
-    EXPECT_FALSE(xVector != zVector);
 }
 
 // Checks that the result of case equality between a vector that holds an integer and itself is true.
@@ -993,36 +980,31 @@ TEST_F(vec4stateTest, TestLogicalAndIntVectorWithStringVector) {
 }
 
 // Checks that the logic and of a vector that holds an integer (32 bits) with a value greater than 0, with a vector that holds only unknown bits returns a vector that holds x.
-// Also checks that the cast of vector that holds 1 bit equal to x to bool returns false.
 TEST_F(vec4stateTest, TestLogicalAndIntVectorWithXVector) {
     vec4state andVector = intVector && xVector;
     EXPECT_TRUE(compareVectorToString(andVector, string("x")));
     EXPECT_TRUE(checkVectorSize(andVector, 1));
-    EXPECT_FALSE(intVector && xVector);
 }
 
 // Checks that the logic and of a vector that holds at least one 1, with a vector that holds only unknown bits returns a vector that holds x.
-// Also checks that the cast of vector that holds 1 bit equal to x to bool returns false.
 TEST_F(vec4stateTest, TestLogicalAndStringVectorWithZVector) {
     vec4state andVector = stringVector && zVector;
     EXPECT_TRUE(compareVectorToString(andVector, string("x")));
     EXPECT_TRUE(checkVectorSize(andVector, 1));
-    EXPECT_FALSE(stringVector && zVector);
 }
 
 // Checks that the logic and of a vector that holds only unknown bits, with a vector that holds 0 returns a vector that holds 0(the result is false).
-// Also checks that the cast of vector that holds 1 bit equal to 0 to bool is false.
 TEST_F(vec4stateTest, TestLogicalAndZVectorWithZeroesVector) {
-    EXPECT_FALSE(zVector && zeroesVector);
+    vec4state andVector = zVector && zeroesVector;
+    EXPECT_TRUE(compareVectorToString(andVector, string("x")));
+    EXPECT_TRUE(checkVectorSize(andVector, 1));
 }
 
 // Checks that the logic and of a vector that holds only unknown bits, with a vector that holds only unknown bits returns a vector that holds x.
-// Also checks that the cast of vector that holds 1 bit equal to x to bool returns false.
 TEST_F(vec4stateTest, TestLogicalAndXVectorWithZVector) {
     vec4state andVector = xVector && zVector;
     EXPECT_TRUE(compareVectorToString(andVector, string("x")));
     EXPECT_TRUE(checkVectorSize(andVector, 1));
-    EXPECT_FALSE(xVector && zVector);
 }
 
 // Checks that the logic and of a vector that holds only 0, with a vector that holds only 1 returns a vector that holds 0 (the result is false).
@@ -1068,21 +1050,17 @@ TEST_F(vec4stateTest, TestLogicalOrStringVectorWithZVector) {
 }
 
 // Checks that the logic or of a vector that holds only unknown bits with 0 returns a vector that holds x.
-// Also checks that the cast of vector that holds 1 bit equal to x to bool returns false.
 TEST_F(vec4stateTest, TestLogicalOrZVectorWithZero) {
     vec4state orVector = zVector || 0;
     EXPECT_TRUE(compareVectorToString(orVector, string("x")));
     EXPECT_TRUE(checkVectorSize(orVector, 1));
-    EXPECT_FALSE(zVector || 0);
 }
 
 // Checks that the logic or of a vector that holds only x's with a vector that holds only z's returns a vector that holds x.
-// Also checks that the cast of vector that holds 1 bit equal to x to bool returns false.
 TEST_F(vec4stateTest, TestLogicalOrXVectorWithZVector) {
     vec4state orVector = xVector || zVector;
     EXPECT_TRUE(compareVectorToString(orVector, string("x")));
     EXPECT_TRUE(checkVectorSize(orVector, 1));
-    EXPECT_FALSE(xVector || zVector);
 }
 
 // Checks that the logic or of a vector that holds only 0's with 0 returns a vector that holds 0.
@@ -1104,21 +1082,17 @@ TEST_F(vec4stateTest, TestLogicalNotStringVector) {
 }
 
 // Checks that the logic not of a vector that holds only unknown bits returns a vector that holds x.
-// Also checks that the cast of vector that holds 1 bit equal to x to bool returns false.
 TEST_F(vec4stateTest, TestLogicalNotXVector) {
     vec4state notVector = !xVector;
     EXPECT_TRUE(compareVectorToString(notVector, string("x")));
     EXPECT_TRUE(checkVectorSize(notVector, 1));
-    EXPECT_FALSE(!xVector);
 }
 
 // Checks that the logic not of a vector that holds only z's returns a vector that holds x.
-// Also checks that the cast of vector that holds 1 bit equal to x to bool returns false.
 TEST_F(vec4stateTest, TestLogicalNotZVector) {
     vec4state notVector = !zVector;
     EXPECT_TRUE(compareVectorToString(notVector, string("x")));
     EXPECT_TRUE(checkVectorSize(notVector, 1));
-    EXPECT_FALSE(!zVector);
 }
 
 // Checks that the logic not of a vector that holds only 0's returns a vector that holds 1.
@@ -1152,12 +1126,10 @@ TEST_F(vec4stateTest, TestRelationalIntVectorLessThanLongLongVector) {
 }
 
 // Checks that a vector that holds an integer (32 bits) is not necessarily less than an unknown vector that holds 6 bits (returns a vector that holds x).
-// Also checks that the cast of vector that holds 1 bit equal to x to bool returns false.
 TEST_F(vec4stateTest, TestRelationalIntVectorLessThanStringVector) {
     vec4state ltVector = intVector < stringVector;
     EXPECT_TRUE(compareVectorToString(ltVector, string("x")));
     EXPECT_TRUE(checkVectorSize(ltVector, 1));
-    EXPECT_FALSE(intVector < stringVector);
 }
 
 // Checks that a vector that holds only 0's is less than a vector that holds only 1's (returns a vector that holds 1).
@@ -1191,12 +1163,10 @@ TEST_F(vec4stateTest, TestRelationalLongLongVectorGreaterThanIntVector) {
 }
 
 // Checks that a vector that holds an integer (32 bits) is not necessarily greater than an unknown vector that holds 6 bits (returns a vector that holds x).
-// Also checks that the cast of vector that holds 1 bit equal to x to bool returns false.
 TEST_F(vec4stateTest, TestRelationalIntVectorGreaterThanStringVector) {
     vec4state gtVector = intVector > stringVector;
     EXPECT_TRUE(compareVectorToString(gtVector, string("x")));
     EXPECT_TRUE(checkVectorSize(gtVector, 1));
-    EXPECT_FALSE(intVector > stringVector);
 }
 
 // Checks that a vector that holds only 0's is not greater than a vector that holds only 1's (returns a vector that holds 0).
@@ -1230,12 +1200,10 @@ TEST_F(vec4stateTest, TestRelationalIntVectorLessThanEqualToLongLongVector) {
 }
 
 // Checks that a vector that holds an integer (32 bits) is not necessarily less than or equal to an unknown vector that holds 6 bits (returns a vector that holds x).
-// Also checks that the cast of vector that holds 1 bit equal to x to bool returns false.
 TEST_F(vec4stateTest, TestRelationalIntVectorLessThanEqualToStringVector) {
     vec4state lteVector = intVector <= stringVector;
     EXPECT_TRUE(compareVectorToString(lteVector, string("x")));
     EXPECT_TRUE(checkVectorSize(lteVector, 1));
-    EXPECT_FALSE(intVector <= stringVector);
 }
 
 // Checks that a vector that holds only 0's is less than or equal to a vector that holds only 1's (returns a vector that holds 1).
@@ -1269,12 +1237,10 @@ TEST_F(vec4stateTest, TestRelationalIntVectorGreaterThanEqualToLongLongVector) {
 }
 
 // Checks that a vector that holds an integer (32 bits) is not necessarily greater than or equal to an unknown vector that holds 6 bits (returns a vector that holds x).
-// Also checks that the cast of vector that holds 1 bit equal to x to bool returns false.
 TEST_F(vec4stateTest, TestRelationalIntVectorGreaterThanEqualToStringVector) {
     vec4state gteVector = intVector >= stringVector;
     EXPECT_TRUE(compareVectorToString(gteVector, string("x")));
     EXPECT_TRUE(checkVectorSize(gteVector, 1));
-    EXPECT_FALSE(intVector >= stringVector);
 }
 
 // Checks that a vector that holds only 0's is not greater than or equal to a vector that holds only 1's (returns a vector that holds 0).
@@ -1311,6 +1277,7 @@ TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithNumberCarry) {
 }
 
 // Checks that the conversion of a 4-state vector that holds only known bits to 2-state returns the same vector.
+// Also checks equality.
 TEST_F(vec4stateTest, TestConversionTo2StateKnownVector) {
     vec4state beforeCast = intVector;
     intVector.convertTo2State();
@@ -1320,69 +1287,63 @@ TEST_F(vec4stateTest, TestConversionTo2StateKnownVector) {
 }
 
 // Checks that the conversion of a 4-state vector that holds known and unknown bits to 2-state returns a vector in which every unknown bit is set to 0.
-// Also checks that the vector after cast is not unknown anymore and that the bool cast of a vector that holds only x is false (in the logical equality).
+// Also checks that the vector after cast is not unknown anymore and equality.
 TEST_F(vec4stateTest, TestConversionTo2StateUnknownVector) {
     vec4state beforeCast = stringVector;
     EXPECT_TRUE(stringVector.isUnknown());
     stringVector.convertTo2State();
     EXPECT_TRUE(compareVectorToString(stringVector, string("010011")));
     EXPECT_TRUE(checkVectorSize(stringVector, 6));
-    EXPECT_FALSE(stringVector != beforeCast);
     EXPECT_TRUE(stringVector.caseInequality(beforeCast));
     EXPECT_FALSE(stringVector.isUnknown());
 }
 
 // Checks that the conversion of a 4-state vector that holds only unknown bits to 2-state returns a vector that holds only 0's.
-// Also checks that the vector after cast is not unknown anymore and that the bool cast of a vector that holds only x is false (in the logical equality).
+// Also checks that the vector after cast is not unknown anymore and equality.
 TEST_F(vec4stateTest, TestConversionTo2StateXVector) {
     vec4state beforeCast = xVector;
     EXPECT_TRUE(xVector.isUnknown());
     xVector.convertTo2State();
     EXPECT_TRUE(compareVectorToString(xVector, string("00")));
     EXPECT_TRUE(checkVectorSize(xVector, 2));
-    EXPECT_FALSE(xVector != beforeCast);
     EXPECT_TRUE(xVector == zeroesVector);
     EXPECT_TRUE(xVector.caseInequality(beforeCast));
     EXPECT_FALSE(xVector.isUnknown());
 }
 
 // Checks that the conversion of a 4-state vector that holds only z's to 2-state returns a vector that holds only 0's.
-// Also checks that the vector after cast is not unknown anymore and that the bool cast of a vector that holds only x is false (in the logical equality).
+// Also checks that the vector after cast is not unknown anymore and equality.
 TEST_F(vec4stateTest, TestConversionTo2StateZVector) {
     vec4state beforeCast = zVector;
     EXPECT_TRUE(zVector.isUnknown());
     zVector.convertTo2State();
     EXPECT_TRUE(compareVectorToString(zVector, string("00")));
     EXPECT_TRUE(checkVectorSize(zVector, 2));
-    EXPECT_FALSE(zVector != beforeCast);
     EXPECT_TRUE(zVector == zeroesVector);
     EXPECT_TRUE(zVector.caseInequality(beforeCast));
     EXPECT_FALSE(zVector.isUnknown());
 }
 
 // Checks that changing the unknown bits of a vector to known bits changes the vector to be a known vector.
-// Also checks that the vector after the change is not the same anymore, logic and case equality, bit select, and that the bool cast of a vector that holds only x is false (in the logical equality).
+// Also checks that the vector after the change is not the same anymore and equality.
 TEST_F(vec4stateTest, TestChangeUnknownBitsToKnown) {
     vec4state beforeChange = stringVector;
-    EXPECT_FALSE(stringVector != beforeChange);
     EXPECT_TRUE(stringVector.caseEquality(beforeChange));
     EXPECT_TRUE(stringVector.isUnknown());
     stringVector.setBitSelect(2, 1);
     EXPECT_TRUE(compareVectorToString(stringVector, string("01x111")));
     EXPECT_TRUE(checkVectorSize(stringVector, 6));
-    EXPECT_FALSE(stringVector != beforeChange);
     EXPECT_TRUE(stringVector.caseInequality(beforeChange));
     EXPECT_TRUE(stringVector.isUnknown());
     stringVector.setBitSelect(3, 0);
     EXPECT_TRUE(compareVectorToString(stringVector, string("010111")));
     EXPECT_TRUE(checkVectorSize(stringVector, 6));
-    EXPECT_FALSE(stringVector != beforeChange);
     EXPECT_TRUE(stringVector.caseInequality(beforeChange));
     EXPECT_FALSE(stringVector.isUnknown());
 }
 
 // Checks that changing the known bits of a vector to unknown bits changes the vector to be an unknown vector.
-// Also checks that the vector after the change is not the same anymore, logic and case equality, bit select, and that the bool cast of a vector that holds only x is false (in the logical equality).
+// Also checks that the vector after the change is not the same anymore, equality and bit select.
 TEST_F(vec4stateTest, TestChangeKnownBitsToUnknown) {
     vec4state beforeChange = longLongVector;
     EXPECT_TRUE(longLongVector == beforeChange);
@@ -1391,7 +1352,6 @@ TEST_F(vec4stateTest, TestChangeKnownBitsToUnknown) {
     longLongVector.setBitSelect(0, xVector);
     EXPECT_TRUE(compareVectorToString(longLongVector, string("000100100011010001010110011110001001000010101011110011011110111x")));
     EXPECT_TRUE(checkVectorSize(longLongVector, 64));
-    EXPECT_FALSE(longLongVector != beforeChange);
     EXPECT_TRUE(longLongVector.caseInequality(beforeChange));
     EXPECT_TRUE(longLongVector.isUnknown());
 }
@@ -1408,12 +1368,12 @@ TEST_F(vec4stateTest, TestConversionToBoolZeroesVector) {
 
 // Checks that a vector that holds only x's is converted to a bool that is false.
 TEST_F(vec4stateTest, TestConversionToBoolXVector) {
-    EXPECT_FALSE(xVector);
+    EXPECT_TRUE(bool(xVector) == false);
 }
 
 // Checks that a vector that holds only z's is converted to a bool that is false.
 TEST_F(vec4stateTest, TestConversionToBoolZVector) {
-    EXPECT_FALSE(zVector);
+    EXPECT_TRUE(bool(zVector) == false);
 }
 
 // Checks that a vector that holds only known bits that at least one of them is 1 is converted to a bool that is true.
@@ -1423,7 +1383,7 @@ TEST_F(vec4stateTest, TestConversionToBoolOneAndZeroVector) {
 
 // Checks that a vector that holds both 0's and unknown bits is converted to a bool that is false.
 TEST_F(vec4stateTest, TestConversionToBoolZeroAndXVector) {
-    EXPECT_FALSE(zeroAndXVector);
+    EXPECT_TRUE(bool(zeroAndXVector) == false);
 }
 
 // Checks that a vector that holds both 1's and unknown bits is converted to a bool that is true.
