@@ -1309,3 +1309,129 @@ TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithNumberCarry) {
     EXPECT_TRUE(compareVectorToString(addVector, string("100010001010001101000101011001110")));
     EXPECT_TRUE(checkVectorSize(addVector, 33));
 }
+
+// Checks that the conversion of a 4-state vector that holds only known bits to 2-state returns the same vector.
+TEST_F(vec4stateTest, TestConversionTo2StateKnownVector) {
+    vec4state beforeCast = intVector;
+    intVector.convertTo2State();
+    EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111000")));
+    EXPECT_TRUE(checkVectorSize(intVector, 32));
+    EXPECT_TRUE(intVector == beforeCast);
+}
+
+// Checks that the conversion of a 4-state vector that holds known and unknown bits to 2-state returns a vector in which every unknown bit is set to 0.
+// Also checks that the vector after cast is not unknown anymore and that the bool cast of a vector that holds only x is false (in the logical equality).
+TEST_F(vec4stateTest, TestConversionTo2StateUnknownVector) {
+    vec4state beforeCast = stringVector;
+    EXPECT_TRUE(stringVector.isUnknown());
+    stringVector.convertTo2State();
+    EXPECT_TRUE(compareVectorToString(stringVector, string("010011")));
+    EXPECT_TRUE(checkVectorSize(stringVector, 6));
+    EXPECT_FALSE(stringVector != beforeCast);
+    EXPECT_TRUE(stringVector.caseInequality(beforeCast));
+    EXPECT_FALSE(stringVector.isUnknown());
+}
+
+// Checks that the conversion of a 4-state vector that holds only unknown bits to 2-state returns a vector that holds only 0's.
+// Also checks that the vector after cast is not unknown anymore and that the bool cast of a vector that holds only x is false (in the logical equality).
+TEST_F(vec4stateTest, TestConversionTo2StateXVector) {
+    vec4state beforeCast = xVector;
+    EXPECT_TRUE(xVector.isUnknown());
+    xVector.convertTo2State();
+    EXPECT_TRUE(compareVectorToString(xVector, string("00")));
+    EXPECT_TRUE(checkVectorSize(xVector, 2));
+    EXPECT_FALSE(xVector != beforeCast);
+    EXPECT_TRUE(xVector == zeroesVector);
+    EXPECT_TRUE(xVector.caseInequality(beforeCast));
+    EXPECT_FALSE(xVector.isUnknown());
+}
+
+// Checks that the conversion of a 4-state vector that holds only z's to 2-state returns a vector that holds only 0's.
+// Also checks that the vector after cast is not unknown anymore and that the bool cast of a vector that holds only x is false (in the logical equality).
+TEST_F(vec4stateTest, TestConversionTo2StateZVector) {
+    vec4state beforeCast = zVector;
+    EXPECT_TRUE(zVector.isUnknown());
+    zVector.convertTo2State();
+    EXPECT_TRUE(compareVectorToString(zVector, string("00")));
+    EXPECT_TRUE(checkVectorSize(zVector, 2));
+    EXPECT_FALSE(zVector != beforeCast);
+    EXPECT_TRUE(zVector == zeroesVector);
+    EXPECT_TRUE(zVector.caseInequality(beforeCast));
+    EXPECT_FALSE(zVector.isUnknown());
+}
+
+// Checks that changing the unknown bits of a vector to known bits changes the vector to be a known vector.
+// Also checks that the vector after the change is not the same anymore, logic and case equality, bit select, and that the bool cast of a vector that holds only x is false (in the logical equality).
+TEST_F(vec4stateTest, TestChangeUnknownBitsToKnown) {
+    vec4state beforeChange = stringVector;
+    EXPECT_FALSE(stringVector != beforeChange);
+    EXPECT_TRUE(stringVector.caseEquality(beforeChange));
+    EXPECT_TRUE(stringVector.isUnknown());
+    stringVector.setBitSelect(2, 1);
+    EXPECT_TRUE(compareVectorToString(stringVector, string("01x111")));
+    EXPECT_TRUE(checkVectorSize(stringVector, 6));
+    EXPECT_FALSE(stringVector != beforeChange);
+    EXPECT_TRUE(stringVector.caseInequality(beforeChange));
+    EXPECT_TRUE(stringVector.isUnknown());
+    stringVector.setBitSelect(3, 0);
+    EXPECT_TRUE(compareVectorToString(stringVector, string("010111")));
+    EXPECT_TRUE(checkVectorSize(stringVector, 6));
+    EXPECT_FALSE(stringVector != beforeChange);
+    EXPECT_TRUE(stringVector.caseInequality(beforeChange));
+    EXPECT_FALSE(stringVector.isUnknown());
+}
+
+// Checks that changing the known bits of a vector to unknown bits changes the vector to be an unknown vector.
+// Also checks that the vector after the change is not the same anymore, logic and case equality, bit select, and that the bool cast of a vector that holds only x is false (in the logical equality).
+TEST_F(vec4stateTest, TestChangeKnownBitsToUnknown) {
+    vec4state beforeChange = longLongVector;
+    EXPECT_TRUE(longLongVector == beforeChange);
+    EXPECT_TRUE(longLongVector.caseEquality(beforeChange));
+    EXPECT_FALSE(longLongVector.isUnknown());
+    longLongVector.setBitSelect(0, xVector);
+    EXPECT_TRUE(compareVectorToString(longLongVector, string("000100100011010001010110011110001001000010101011110011011110111x")));
+    EXPECT_TRUE(checkVectorSize(longLongVector, 64));
+    EXPECT_FALSE(longLongVector != beforeChange);
+    EXPECT_TRUE(longLongVector.caseInequality(beforeChange));
+    EXPECT_TRUE(longLongVector.isUnknown());
+}
+
+// Checks that a vector that holds only 1 bits is converted to a bool that is true.
+TEST_F(vec4stateTest, TestConversionToBoolOnesVector) {
+    EXPECT_TRUE(onesVector);
+}
+
+// Checks that a vector that holds only 0 bits is converted to a bool that is false.
+TEST_F(vec4stateTest, TestConversionToBoolZeroesVector) {
+    EXPECT_FALSE(zeroesVector);
+}
+
+// Checks that a vector that holds only x's is converted to a bool that is false.
+TEST_F(vec4stateTest, TestConversionToBoolXVector) {
+    EXPECT_FALSE(xVector);
+}
+
+// Checks that a vector that holds only z's is converted to a bool that is false.
+TEST_F(vec4stateTest, TestConversionToBoolZVector) {
+    EXPECT_FALSE(zVector);
+}
+
+// Checks that a vector that holds only known bits that at least one of them is 1 is converted to a bool that is true.
+TEST_F(vec4stateTest, TestConversionToBoolOneAndZeroVector) {
+    EXPECT_TRUE(vec4state("10"));
+}
+
+// Checks that a vector that holds both 0's and unknown bits is converted to a bool that is false.
+TEST_F(vec4stateTest, TestConversionToBoolZeroAndXVector) {
+    EXPECT_FALSE(zeroAndXVector);
+}
+
+// Checks that a vector that holds both 1's and unknown bits is converted to a bool that is true.
+TEST_F(vec4stateTest, TestConversionToBoolOneAndXVector) {
+    EXPECT_TRUE(oneAndXVector);
+}
+
+// Checks that a vector that holds 0's, 1's and unknown bits is converted to a bool that is true.
+TEST_F(vec4stateTest, TestConversionToBoolStringVector) {
+    EXPECT_TRUE(stringVector);
+}
