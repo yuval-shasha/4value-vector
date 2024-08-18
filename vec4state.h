@@ -194,29 +194,13 @@ class vec4state
         // Returns a vector that is a slice of the original vector from start to end.
         vec4state getPartSelect(long long end, long long start) const;
 
-        template <typename T1, typename T2>
-        vec4state getPartSelect(T1 end, T2 start) const {
-            static_assert(is_integral<T1>::value, "end must be an integral type");
-            static_assert(is_integral<T2>::value, "start must be an integral type");
-            return getPartSelect(long long(end), long long(start));
-        }
-
         // Sets the slice of the original vector from start to end to the value of other.
         void setPartSelect(long long end, long long start, const vec4state& other);
 
-        template <typename T1, typename T2>
-        void setPartSelect(T1 end, T2 start, const vec4state& other) {
-            static_assert(is_integral<T1>::value, "end must be an integral type");
-            static_assert(is_integral<T2>::value, "start must be an integral type");
-            setPartSelect(long long(end), long long(start), other);
-        }
-
-        template <typename T1, typename T2, typename T3>
-        void setPartSelect(T1 end, T2 start, T3 num) {
-            static_assert(is_integral<T1>::value, "end must be an integral type");
-            static_assert(is_integral<T2>::value, "start must be an integral type");
-            static_assert(is_valid_type_for_vec4state<T3>::value, "num must be an integral type or string");
-            setPartSelect(long long(end), long long(start), vec4state(num));
+        template <typename T>
+        void setPartSelect(long long end, long long start, T num) {
+            static_assert(is_valid_type_for_vec4state<T>::value, "num must be an integral type or string");
+            setPartSelect(end, start, vec4state(num));
         }
 
         // Logical operators

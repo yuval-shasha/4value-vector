@@ -61,6 +61,13 @@ TEST_F(vec4stateTest, TestLongLongConstructor) {
     EXPECT_TRUE(checkVectorSize(testVector, 64));
 }
 
+// Checks that the constructor creates a 32-bit vector that stores the value of the negative integer passed to it (only 1 bits).
+TEST_F(vec4stateTest, TestSignedConstructor) {
+    vec4state testVector = vec4state(-1);
+    EXPECT_TRUE(compareVectorToString(testVector, string("11111111111111111111111111111111")));
+    EXPECT_TRUE(checkVectorSize(testVector, 32));
+}
+
 // Checks that the constructor creates a vector that has the same value as the string passed to it and has the same number of bits as the string's length. If the string is empty, the vector should hold 1 bit that stores the value x.
 TEST_F(vec4stateTest, TestStringConstructor) {
     vec4state sixBitVector = vec4state("01xz11");
@@ -160,6 +167,13 @@ TEST_F(vec4stateTest, TestBitwiseAndIntVectorWithLongLong) {
     EXPECT_TRUE(checkVectorSize(andVector, 64));
 }
 
+// Checks that the bitwise AND operator between a vector that holds an integer with a negative integer creates a vector that holds the result of the bitwise AND operation between the two numbers.
+TEST_F(vec4stateTest, TestBitwiseAndIntVectorWithNegativeInteger) {
+    vec4state andVector = intVector & -5;
+    EXPECT_TRUE(compareVectorToString(andVector, string("00010010001101000101011001111000")));
+    EXPECT_TRUE(checkVectorSize(andVector, 32));
+}
+
 // Checks that the bitwise AND operator between a vector that holds an integer with the integer inside the vector creates the vector itself.
 TEST_F(vec4stateTest, TestBitwiseAndIntVectorWithInteger) {
     vec4state andVector = intVector & 0x12345678;
@@ -216,6 +230,13 @@ TEST_F(vec4stateTest, TestBitwiseOrIntVectorWithInteger) {
     EXPECT_TRUE(checkVectorSize(orVector, 32));
 }
 
+// Checks that the bitwise OR operator between a vector that holds an integer with a negative integer creates a vector that holds the result of the bitwise OR operation between the two numbers.
+TEST_F(vec4stateTest, TestBitwiseOrIntVectorWithNegativeInteger) {
+    vec4state orVector = intVector | -7;
+    EXPECT_TRUE(compareVectorToString(orVector, string("00010010001101000101011001111000")));
+    EXPECT_TRUE(checkVectorSize(orVector, 32));
+}
+
 // Checks that the bitwise OR operator between a vector that stores unknown bits with itself creates a vector in which every unknown value becomes x.
 TEST_F(vec4stateTest, TestBitwiseOrStringVectorWithItself) {
     vec4state orVector = stringVector | stringVector;
@@ -262,6 +283,13 @@ TEST_F(vec4stateTest, TestBitwiseXorIntVectorWithLongLong) {
 TEST_F(vec4stateTest, TestBitwiseXorIntVectorWithInteger) {
     vec4state xorVector = intVector ^ 0x12345678;
     EXPECT_TRUE(compareVectorToString(xorVector, string("00000000000000000000000000000000")));
+    EXPECT_TRUE(checkVectorSize(xorVector, 32));
+}
+
+// Checks that the bitwise XOR operator between a vector that holds unknown bits with a negative number creates a vector that holds the result of the bitwise XOR operation between the two numbers. The result should have the same number of bits as the longer number.
+TEST_F(vec4stateTest, TestBitwiseXorStringVectorWithNegativeInteger) {
+    vec4state xorVector = stringVector ^ -11;
+    EXPECT_TRUE(compareVectorToString(xorVector, string("1111111111111111111111111110xx10")));
     EXPECT_TRUE(checkVectorSize(xorVector, 32));
 }
 
@@ -313,6 +341,11 @@ TEST_F(vec4stateTest, TestLongLongVectorEqualityWithLongLong) {
     EXPECT_TRUE(longLongVector == 0x1234567890ABCDEF);
 }
 
+// Checks that a vector that holds a long long number is not logically equal to a different negative integer.
+TEST_F(vec4stateTest, TestLongLongVectorEqualityWithNegativeInteger) {
+    EXPECT_FALSE(longLongVector == -1);
+}
+
 // Checks that the result of logical equality between a 6-bit vector that holds unknown values and itself returns an unknown value.
 TEST_F(vec4stateTest, TestStringVectorEqualityWithItself) {
     vec4state eqVector = stringVector == stringVector;
@@ -342,7 +375,7 @@ TEST_F(vec4stateTest, TestStringVectorEqualityWithLongLongVector) {
     EXPECT_FALSE(stringVector == longLongVector);
 }
 
-// Checks that the result of logical equality between two unknown vectors of different sizes returns false.
+// Checks that the result of logical equality between two unknown vectors of different sizes returns false and that it works symetrically.
 TEST_F(vec4stateTest, TestSmallVectorEqualityWithBigVector) {
     EXPECT_FALSE(stringVector == bigVector);
     EXPECT_FALSE(bigVector == stringVector);
@@ -356,6 +389,13 @@ TEST_F(vec4stateTest, TestBigVectorEqualityWithIntVector) {
 // Checks that the result of logical equality between a big unknown vector and a vector that holds a long long number (that have different values in the bits that are known) returns false.
 TEST_F(vec4stateTest, TestBigVectorEqualityWithLongLongVector) {
     EXPECT_FALSE(bigVector == longLongVector);
+}
+
+// Checks that the result of logical equality between a 108-bit unknown vector and a vector that holds the same 107 bits and the last bit is different returns false, and that the inequality returns true.
+TEST_F(vec4stateTest, TestBigVectorEqualityWithDifferentBigVector) {
+    vec4state almostBigVector = vec4state("1110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx");
+    EXPECT_FALSE(bigVector == almostBigVector);
+    EXPECT_TRUE(bigVector != almostBigVector);
 }
 
 // Checks that the result of logical equality between a vector that holds only ones and a vector that holds only x's is unknown.
@@ -420,6 +460,11 @@ TEST_F(vec4stateTest, TestIntVectorInequalityWithLongLong) {
     EXPECT_TRUE(intVector != 0x1234567890ABCDEF);
 }
 
+// Checks that the result of logical inequality between a vector that holds an integer and a different negative integer is true.
+TEST_F(vec4stateTest, TestIntVectorInequalityWithNegativeInteger) {
+    EXPECT_TRUE(intVector != -2);
+}
+
 // Checks that the result of logical inequality between a vector that holds a long long number and an unknown vector (with no common known bits) is false.
 TEST_F(vec4stateTest, TestLongLongVectorInequalityWithBigVector) {
     EXPECT_TRUE(longLongVector != bigVector);
@@ -480,6 +525,11 @@ TEST_F(vec4stateTest, TestIntVectorCaseEqualityWithInteger) {
     EXPECT_TRUE(intVector.caseEquality(0x12345678));
 }
 
+// Checks that the result of case equality between a vector that holds an integer and a different negative integer is false.
+TEST_F(vec4stateTest, TestIntVectorCaseEqualityWithNegativeInteger) {
+    EXPECT_FALSE(intVector.caseEquality(-5));
+}
+
 // Checks that the result of case equality between an unknown vector and itself is true.
 TEST_F(vec4stateTest, TestStringVectorCaseEqualityWithItself) {
     EXPECT_TRUE(stringVector.caseEquality(stringVector));
@@ -508,6 +558,11 @@ TEST_F(vec4stateTest, TestIntVectorCaseInequalityWithItself) {
 // Checks that the result of case inequality between a vector that holds an integer and the integer inside the vector is false.
 TEST_F(vec4stateTest, TestIntVectorCaseInequalityWithInteger) {
     EXPECT_FALSE(intVector.caseInequality(0x12345678));
+}
+
+// Checks that the result of case inequality between a vector that holds an integer and a different negative integer is true.
+TEST_F(vec4stateTest, TestIntVectorCaseInequalityWithInteger) {
+    EXPECT_TRUE(intVector.caseInequality(-3));
 }
 
 // Checks that the result of case inequality between an unknown vector and itself is false.
@@ -993,10 +1048,10 @@ TEST_F(vec4stateTest, TestLogicalAndStringVectorWithZVector) {
     EXPECT_TRUE(checkVectorSize(andVector, 1));
 }
 
-// Checks that the logic and of a vector that holds only unknown bits, with a vector that holds 0 returns a vector that holds 0(the result is false).
+// Checks that the logic and of a vector that holds only unknown bits, with a vector that holds 0 returns a vector that holds 0 (the result is false).
 TEST_F(vec4stateTest, TestLogicalAndZVectorWithZeroesVector) {
     vec4state andVector = zVector && zeroesVector;
-    EXPECT_TRUE(compareVectorToString(andVector, string("x")));
+    EXPECT_TRUE(compareVectorToString(andVector, string("0")));
     EXPECT_TRUE(checkVectorSize(andVector, 1));
 }
 
