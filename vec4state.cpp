@@ -77,6 +77,8 @@ void vec4state::decNumBits(long long newNumBits) {
 }
 
 long long vec4state::convertVectorToLongLong() const {
+    // TODO: is this correct?
+    // If the vector is 0's after the 64th bit?
     if (vectorSize > 2) {
         throw string("Cannot convert a vector that stores more than 64 bits to long long number");
     }
@@ -84,7 +86,7 @@ long long vec4state::convertVectorToLongLong() const {
         throw string("Cannot convert unknown vector to long long number");
     }
     long long result = 0;
-    for (long long i = min(vectorSize, long long(2)); i >= 0; i--) {
+    for (long long i = min(vectorSize, long long(2)) - 1; i >= 0; i--) {
         result = result << 32;
         result += vector[i].getAval();
     }

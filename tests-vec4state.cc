@@ -233,7 +233,7 @@ TEST_F(vec4stateTest, TestBitwiseOrIntVectorWithInteger) {
 // Checks that the bitwise OR operator between a vector that holds an integer with a negative integer creates a vector that holds the result of the bitwise OR operation between the two numbers.
 TEST_F(vec4stateTest, TestBitwiseOrIntVectorWithNegativeInteger) {
     vec4state orVector = intVector | -7;
-    EXPECT_TRUE(compareVectorToString(orVector, string("00010010001101000101011001111000")));
+    EXPECT_TRUE(compareVectorToString(orVector, string("11111111111111111111111111111001")));
     EXPECT_TRUE(checkVectorSize(orVector, 32));
 }
 
@@ -561,7 +561,7 @@ TEST_F(vec4stateTest, TestIntVectorCaseInequalityWithInteger) {
 }
 
 // Checks that the result of case inequality between a vector that holds an integer and a different negative integer is true.
-TEST_F(vec4stateTest, TestIntVectorCaseInequalityWithInteger) {
+TEST_F(vec4stateTest, TestIntVectorCaseInequalityWithNegativeInteger) {
     EXPECT_TRUE(intVector.caseInequality(-3));
 }
 
@@ -803,7 +803,7 @@ TEST_F(vec4stateTest, TestSetBitSelectStringVectorToDefaultVector) {
     stringVector.setBitSelect(1, defaultVector);
     EXPECT_TRUE(compareVectorToString(stringVector, string("01xzx1")));
     EXPECT_TRUE(stringVector.caseInequality(beforeSet));
-    EXPECT_FALSE(stringVector != beforeSet);
+    EXPECT_TRUE((stringVector != beforeSet).caseEquality(defaultVector));
     EXPECT_TRUE(checkVectorSize(stringVector, 6));
 }
 
@@ -823,7 +823,7 @@ TEST_F(vec4stateTest, TestSetBitSelectStringVectorToZeroAndXVector) {
     stringVector.setBitSelect(1, zeroAndXVector);
     EXPECT_TRUE(compareVectorToString(stringVector, string("01xzx1")));
     EXPECT_TRUE(stringVector.caseInequality(beforeSet));
-    EXPECT_FALSE(stringVector != beforeSet);
+    EXPECT_TRUE((stringVector != beforeSet).caseEquality(defaultVector));
     EXPECT_TRUE(checkVectorSize(stringVector, 6));
 }
 
@@ -1317,6 +1317,64 @@ TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithStringVector) {
     EXPECT_TRUE(checkVectorSize(intVector + stringVector, 32));
 }
 
+// Check that operator + is symmetric.
+TEST_F(vec4stateTest, TestArithmeticAddStringVectorWithIntVector) {
+    EXPECT_TRUE(compareVectorToString(stringVector + intVector, string("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")));
+    EXPECT_TRUE(checkVectorSize(stringVector + intVector, 32));
+}
+
+// Checks that the result of the addition of a known vector that holds 32 bits with a known vector that holds 108 bits is a vector that holds 108 bits and the result is correct (in this case there is no carry).
+TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithBigVector) {
+    vec4state addVector = intVector + bigVector;
+    EXPECT_TRUE(compareVectorToString(addVector, string("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")));
+    EXPECT_TRUE(checkVectorSize(addVector, 108));
+}
+
+// Check that operator + is symmetric.
+TEST_F(vec4stateTest, TestArithmeticAddBigVectorWithIntVector) {
+    vec4state addVector =  bigVector + intVector;
+    EXPECT_TRUE(compareVectorToString(addVector, string("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")));
+    EXPECT_TRUE(checkVectorSize(addVector, 108));
+}
+
+// Checks that the result of the addition of a known vector that holds 32 bits with a known vector that holds 3 bits is a vector that holds 32 bits and the result is correct (in this case there is no carry).
+// Also checks that the result of the addition of a the same vector with an integer that holds the same value as the second operand in the addition is the same.
+TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithOnesVector) {
+    vec4state addVector = intVector + onesVector;
+    vec4state addVectorWithInt = intVector + 3;
+    EXPECT_TRUE(compareVectorToString(addVector, string("00010010001101000101011001111011")));
+    EXPECT_TRUE(compareVectorToString(addVectorWithInt, string("00010010001101000101011001111011")));
+    EXPECT_TRUE(checkVectorSize(addVector, 32));
+    EXPECT_TRUE(checkVectorSize(addVectorWithInt, 32));
+}
+
+// Check that operator + is symmetric.
+TEST_F(vec4stateTest, TestArithmeticAddOnesVectorWithIntVector) {
+    vec4state addVector = onesVector + intVector;
+    vec4state addVectorWithInt = intVector + 3;
+    EXPECT_TRUE(compareVectorToString(addVector, string("00010010001101000101011001111011")));
+    EXPECT_TRUE(compareVectorToString(addVectorWithInt, string("00010010001101000101011001111011")));
+    EXPECT_TRUE(checkVectorSize(addVector, 32));
+    EXPECT_TRUE(checkVectorSize(addVectorWithInt, 32));
+}
+
+// Checks that the result of the addition of a known vector that holds 32 bits with a known vector that holds the value 0 is the same as the first operand in the addition.
+TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithZeroesVector) {
+    vec4state addVector = intVector + zeroesVector;
+    EXPECT_TRUE(compareVectorToString(addVector, string("00010010001101000101011001111000")));
+    EXPECT_TRUE(checkVectorSize(addVector, 32));
+}
+
+// TODO: in test below, verilog return 32 bits. 
+// problem in assignment, can't know in advance if the result will be 32 or 33 bits.
+
+// Checks that the result of the addition of a known vector that holds 32 bits with a known vector that holds the value (0xFFFFFFFF) is a vector that holds 33 bits and the value is correct (in this case there is a carry).
+TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithNegativeVector) {
+    vec4state addVector = intVector + negativeVector;
+    EXPECT_TRUE(compareVectorToString(addVector, string("00010010001101000101011001110111")));
+    EXPECT_TRUE(checkVectorSize(addVector, 33));
+}
+
 // Checks that the result of the addition of a known vector with the integer that this vector holds the same as the result of adding the vector with itself.
 TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithNumber) {
     vec4state addVector = intVector + 0x12345678;
@@ -1330,6 +1388,31 @@ TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithNumberCarry) {
     EXPECT_TRUE(compareVectorToString(addVector, string("100010001010001101000101011001110")));
     EXPECT_TRUE(checkVectorSize(addVector, 33));
 }
+
+// Checks that the result of the addition of 2 known vectors, one holds 32 bit and the other holds 64 bits, is a vector that holds 64 bits and the result is correct (int this case there is no carry).
+TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithLongLongVector) {
+    vec4state addVector = intVector + longLongVector;
+    EXPECT_TRUE(compareVectorToString(addVector, string("0001001000110100010101100111100010100010111000000010010001100111")));
+    EXPECT_TRUE(checkVectorSize(addVector, 64));
+}
+
+// Checks that the result of the subtraction of a known vector with itself is 0.
+TEST_F(vec4stateTest, TestArithmeticSubIntVectorWithItself) {
+    vec4state subVector = intVector - intVector;
+    EXPECT_TRUE(compareVectorToString(subVector, string("00000000000000000000000000000000")));
+    EXPECT_TRUE(checkVectorSize(subVector, 32));
+    EXPECT_TRUE(subVector == zeroesVector);
+    EXPECT_TRUE(subVector == 0);
+}
+
+// Checks that the result of the subtraction of a known vector with an unknown vector is a vector of x's that has the same number of bits as the longer operand in the subtraction.
+TEST_F(vec4stateTest, TestArithmeticSubIntVectorWithStringVector) {
+    vec4state subVector = intVector - stringVector;
+    EXPECT_TRUE(compareVectorToString(subVector, string("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")));
+    EXPECT_TRUE(checkVectorSize(subVector, 32));
+}
+
+
 
 // Checks that the conversion of a 4-state vector that holds only known bits to 2-state returns the same vector.
 // Also checks equality.
