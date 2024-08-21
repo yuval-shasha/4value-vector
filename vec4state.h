@@ -12,6 +12,13 @@ using namespace std;
 template <typename T>
 struct is_valid_type_for_vec4state : integral_constant<bool, is_integral<T>::value || is_same<T, std::string>::value || is_same<T, const char*>::value> {};
 
+enum BitValue {
+    ZERO = '0',
+    ONE = '1',
+    X = 'x',
+    Z = 'z'
+};
+
 class vec4state
 {
     private:
@@ -24,14 +31,14 @@ class vec4state
         // isUnknown is a flag that indicates if the vector contains any x's or z's (true if it does, false otherwise).
         bool unknown;
 
-        // Initializes a vector with numBits bits (greater than 0) that contains str (of length 1) repeated numBits times.
-        vec4state(string str, long long numBits);
+        // Initializes a vector with numBits bits (greater than 0) that contains bit repeated numBits times.
+        vec4state(BitValue bit, long long numBits);
         // 0-extending the vector to newNumBits.
         void incNumBits(long long newNumBits);
         // Truncates the vector to newNumBits.
         void decNumBits(long long newNumBits);
-        // Returns the numerical value (of type long long) that the vector holds. This method can be used only if the vector has up to 2 VPI elements and has no unknown bits.
-        long long convertVectorToLongLong() const;
+        // Returns the numerical value that the vector holds. This method can be used only if the vector has up to 2 VPI elements and has no unknown bits.
+        long long extractNumberFromVector() const;
         // Returns a vector which it's aval is the result of the bitwise AND operation between the aval of the vector and the aval of other, and it's bval is the result of the bitwise AND operation between the bval of the vector and the bval of other.
         vec4state bitwiseAndAvalBval(const vec4state& other);
         // Returns a vector which it's aval is the result of the addition of the aval of the vector and the aval of other, and it's bval is the result of the addition of the bval of the vector and the bval of other.
