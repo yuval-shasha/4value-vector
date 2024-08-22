@@ -187,7 +187,7 @@ class vec4state
         vec4state getPartSelect(long long end, long long start) const;
 
         // Sets the slice of the original vector from start to end to the value of other.
-        void setPartSelect(long long end, long long start, const vec4state& other);
+        void setPartSelect(long long end, long long start, vec4state other);
 
         template<typename T, typename enable_if<is_valid_type_for_vec4state<T>::value, bool>::type = true>
         void setPartSelect(long long end, long long start, T num) {
