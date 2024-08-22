@@ -19,6 +19,7 @@ set(SOURCE_FILES
   vec4state.cpp
   vec4state.h
   vpi.h
+  vec4stateException.h
 )
 
 add_executable(
