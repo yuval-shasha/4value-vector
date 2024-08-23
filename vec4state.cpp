@@ -202,14 +202,17 @@ vec4state::vec4state() : vector(nullptr) {
     unknown = false;
 }
 
-// Helper function for filling the remainder of the string into the MSB chunk in the vector.
-// Returns the index of the string where the function stopped filling the vector.
-int fillMSBChunk(VPI* vector, const string& str, long long cellSize, long long cellIndex) {
-    int strIndex = 0;
+/*
+Helper function for filling the vector with bits from a string.
+The function fills the VPI of vector at index currVPIIndex with bits from str, starting from index currStrIndex.
+The filling stops when cellSize bits are filled.
+Returns the index of the next bit in the string.
+*/
+long long fillVPIWithStringBits(VPI* vector, const string& str, long long cellSize, long long currVPIIndex, long long currStrIndex) {
     uint32_t aval = 0;
     uint32_t bval = 0;
-    for (long long i = 0; i < cellSize; i++) {
-        switch(str[strIndex]) {
+    for (long long currBitIndex = 0; currBitIndex < cellSize; currBitIndex++) {
+        switch(str[currStrIndex]) {
             case ZERO:
                 break;
             case ONE:
@@ -223,68 +226,50 @@ int fillMSBChunk(VPI* vector, const string& str, long long cellSize, long long c
                 bval += 1;
                 break;
             default:
-                throw vec4stateExceptionInvalidInput("Invalid bit MSB");
+                throw vec4stateExceptionInvalidInput("Invalid bit: " + str[currStrIndex]);
         }
-        if (i < cellSize - 1) {
+        // If the current bit is not the last bit in the cell, shift the bits to the left.
+        if (currBitIndex < cellSize - 1) {
             aval = aval << 1;
             bval = bval << 1;
         }
-        strIndex++;
+        currStrIndex++;
     }
-    vector[cellIndex].setAval(aval);
-    vector[cellIndex].setBval(bval);
-    return strIndex;
+    vector[currVPIIndex].setAval(aval);
+    vector[currVPIIndex].setBval(bval);
+    return currStrIndex;
 }
 
 vec4state::vec4state(string str) : vec4state() {
+    // If the string is empty, creates a default vector.
     if (str.length() == 0) {
         return;
     }
     numBits = str.length();
     vectorSize = calcVectorSize(numBits);
     vector = new VPI[vectorSize];
-    bool dividedBy32 = (numBits % BITS_IN_CELL == 0);
-    int strIndex = 0;
-    for (long long i = vectorSize - 1; i >= 0; i--) {
-        uint32_t aval = 0;
-        uint32_t bval = 0;
+    // For each VPI element in the vector, fill it with the bits from the string.
+    int numUndividedBits = numBits % BITS_IN_CELL;
+    long long currStrIndex = 0;
+    for (long long currVPIIndex = vectorSize - 1; currVPIIndex >= 0; currVPIIndex--) {
         // The last element gets a special case because when the c'tor receives a string, it reads the string's characters from the MSB to the LSB, translates them to VPIs, and stores them in the vector. If the string's length doesn't divide by 32, then the last VPI (where the 32 MSBs are stored) needs alignment to 32 bits (by padding it with zeroes).
-        if (i == vectorSize - 1 && !dividedBy32) {
+        if (currVPIIndex == vectorSize - 1 && numUndividedBits != 0) {
             try {
-                strIndex = fillMSBChunk(vector, str, numBits % BITS_IN_CELL, i);
+                currStrIndex = fillVPIWithStringBits(vector, str, numUndividedBits, currVPIIndex, 0);
             } catch (vec4stateExceptionInvalidInput& e) {
                 delete vector;
                 throw e;
             }
-            continue;
         }
-
-        for (int j = 0; j < BITS_IN_CELL; j++) {
-            switch(str[strIndex]) {
-                case ZERO:
-                    break;
-                case ONE:
-                    aval += 1;
-                    break;
-                case X:
-                    bval += 1;
-                    break;
-                case Z:
-                    aval += 1;
-                    bval += 1;
-                    break;
-                default:
-                    delete vector;
-                    throw vec4stateExceptionInvalidInput("Invalid bit");
+        // For the rest of the elements in the vector, fill them with the bits from the string.
+        else {
+            try {
+                currStrIndex = fillVPIWithStringBits(vector, str, BITS_IN_CELL, currVPIIndex, currStrIndex);
+            } catch (vec4stateExceptionInvalidInput& e) {
+                delete vector;
+                throw e;
             }
-            if (j < 31) {
-                aval <<= 1;
-                bval <<= 1;
-            }
-            strIndex++;
         }
-        vector[i].setAval(aval);
-        vector[i].setBval(bval);
     }
     setUnknown();
 }
@@ -344,11 +329,19 @@ vec4state& vec4state::operator=(const vec4state& other) {
 }
 
 vec4state vec4state::operator&(const vec4state& other) const {
-    vec4state copyThis = *this;
-    vec4state copyOther = other;
-    copyThis.setNumBits(max(numBits, other.numBits));
-    copyOther.setNumBits(max(numBits, other.numBits));
-    vec4state result = ~(~copyThis | ~copyOther);
+    vec4state result = vec4state(ZERO, max(numBits, other.numBits));
+    // If the vectors have different number of bits, change the size of the smaller vector to the size of the larger vector by padding it with 0's.
+    if (numBits < other.numBits) {
+        vec4state copyThis = *this;
+        copyThis.setNumBits(other.numBits);
+        result = ~(~copyThis | ~other);
+    } else if (numBits > other.numBits) {
+        vec4state copyOther = other;
+        copyOther.setNumBits(numBits);
+        result = ~(~(*this) | ~copyOther);
+    } else {
+        result = ~(~(*this) | ~other);
+    }
     return move(result);
 }
 
@@ -385,11 +378,20 @@ vec4state vec4state::operator|(const vec4state& other) const {
 }
 
 vec4state vec4state::operator^(const vec4state& other) const {
-    vec4state copyThis = *this;
-    vec4state copyOther = other;
-    copyThis.setNumBits(max(numBits, other.numBits));
-    copyOther.setNumBits(max(numBits, other.numBits));
-    return ((copyThis & ~copyOther) | (~copyThis & copyOther));
+    vec4state result = vec4state(ZERO, max(numBits, other.numBits));
+    // If the vectors have different number of bits, change the size of the smaller vector to the size of the larger vector by padding it with 0's.
+    if (numBits < other.numBits) {
+        vec4state copyThis = *this;
+        copyThis.setNumBits(other.numBits);
+        result = (copyThis & ~other) | (~copyThis & other);
+    } else if (numBits > other.numBits) {
+        vec4state copyOther = other;
+        copyOther.setNumBits(numBits);
+        result = (*this & ~copyOther) | (~(*this) & copyOther);
+    } else {
+        result = (*this & ~other) | (~(*this) & other);
+    }
+    return move(result);
 }
 
 // Helper function for zeroing down the bits that are out of range while the vector stays the same size.
@@ -620,29 +622,31 @@ vec4state vec4state::getPartSelect(long long end, long long start) const {
         return vec4state(X, end - start + 1);
     }
 
-    vec4state result = vec4state(Z, end - start + 1);
-    vec4state wanted = *this;
+    // Extract the relevant VPIs of the vector.
+    long long startVPIIndex = start / BITS_IN_CELL;
+    long long lastVPIIndex = end / BITS_IN_CELL;
+    vec4state result = vec4state(ZERO, (lastVPIIndex - startVPIIndex + 1) * BITS_IN_CELL);
+    for(long long currVPIIndex = startVPIIndex; currVPIIndex <= lastVPIIndex; currVPIIndex++) {
+        VPI currVPI = vector[currVPIIndex];
+        result.vector[currVPIIndex - startVPIIndex].setAval(currVPI.getAval());
+        result.vector[currVPIIndex - startVPIIndex].setBval(currVPI.getBval());
+    }
     // Move the bits to the right if the slice starts after index 0.
     if (start >= 0) {
-        wanted = wanted >> start;
+        result = result >> start;
     }
-    wanted = wanted.getPartValidRange(min(end + 1, numBits));
-    
-    // Extract the relevant bits from the vector.
-    result = result.bitwiseAndAvalBval(wanted);
-    result.decNumBits(end - start + 1);
-    
-    // If the slice ends after the last index, put x's where the index is greater than the number of bits.
-    if (end >= numBits) {
-        result.setPartSelect(result.numBits - 1, numBits, vec4state(X, result.numBits - numBits)); 
-    }
-    // If the slice starts before the first index, put x's where the index is less than 0.
-    if (start < 0) {
+    // If the slice starts before the first index, shift the values put x's where the index is less than 0.
+    else {
         // Move the bits to the left.
         result = result << (-start);
         // Put x's where the index is less than 0.
         result.setPartSelect(-start - 1, 0, vec4state(X, -start));
     }
+    // If the slice ends after the last index, put x's where the index is greater than the number of bits.
+    if (end >= numBits) {
+        result.setPartSelect(result.numBits - 1, numBits - start, vec4state(X, result.numBits - 1 - numBits + start)); 
+    }
+    result.decNumBits(end - start + 1);
     // If needed to pad the result with x's.
     if (start < 0 || end >= numBits) {
         result.unknown = true;
@@ -658,46 +662,84 @@ vec4state vec4state::getPartSelect(long long end, long long start) const {
     return move(result);
 }
 
+// TODO: figure out why we fail tests.
 void vec4state::setPartSelect(long long end, long long start, vec4state other) {
     // If input is invalid.
     if (end < start) {
         throw vec4stateExceptionInvalidRange(end, start);
     }
-    
+    // Resizing other to the size of the slice.
+    other.setNumBits(end - start + 1);
+    // In case the slice starts before the first index, move the bits to the right.
+    if (start < 0) {
+        other = other >> (-start);
+    }
+    start = max(start, (long long)(0));
+    end = min(end, numBits - 1);
+    // Adjust the size of other to the size of the slice.
+    other.setNumBits(end - start + 1);
     // If the slice is not completely out of range, perform the operation.
     if (end >= 0 && start < numBits) {
-        long long oldSize = numBits;
-        
-        // Resizing other to the size of the slice.
-        other.setNumBits(end - start + 1);
-        // In case the slice starts before the first index, move the bits to the right.
-        if (start < 0) {
-            other = other >> (-start);
+        long long startVPIIndex = start / BITS_IN_CELL;
+        int offsetStart = start % BITS_IN_CELL;
+        long long endVPIIndex = end / BITS_IN_CELL;
+        int offsetEnd = end % BITS_IN_CELL;
+        long long currVPIIndex = startVPIIndex;
+        uint32_t avalStartThis = vector[startVPIIndex].getAval();
+        uint32_t bvalStartThis = vector[startVPIIndex].getBval();
+        uint32_t avalStartOther = other.vector[0].getAval();
+        uint32_t bvalStartOther = other.vector[0].getBval(); 
+        // If the slice starts in the middle of a cell, copy only the relevant bits.
+        if (offsetStart != 0) {
+            VPI currOtherVPI = other.vector[0];
+            VPI currThisVPI = vector[currVPIIndex];
+            // Leave the bits from the original vector that are not in the slice.
+            avalStartThis = currThisVPI.getAval() & (MASK_32 >> (BITS_IN_CELL - offsetStart));
+            bvalStartThis = currThisVPI.getBval() & (MASK_32 >> (BITS_IN_CELL - offsetStart));
+            // Get the bits from the other vector that are in the slice.
+            avalStartOther = currOtherVPI.getAval() << offsetStart;
+            bvalStartOther = currOtherVPI.getBval() << offsetStart;
+            // Combine the relevant bits from the original vector and the other vector only if it won't affect the end of the slice.
+            if (startVPIIndex != endVPIIndex) {
+                vector[currVPIIndex].setAval(avalStartThis | avalStartOther);
+                vector[currVPIIndex].setBval(bvalStartThis | bvalStartOther);
+                if (vector[currVPIIndex].getBval() != 0) {
+                    unknown = true;
+                }
+                currVPIIndex++;
+            }
         }
-        start = max(start, (long long)(0));
-        end = min(end, numBits - 1);
-        // Adjust the size of other to the size of the slice.
-        other.setNumBits(end - start + 1);
-        // Save the bits before the slice.
-        vec4state beforeStart = vec4state(ZERO, max(start, (long long)(1)));
-        
-        if (start > 0) {
-            beforeStart = getPartValidRange(start);
-        } 
-
-        // Zero down the bits in the slice.
-        *this = *this >> (end + 1);
-        *this = *this << (end - start + 1);
-        // Insert the bits of other into the slice.
-        *this = AdditionAvalBval(other);
-        // Move the starting bits back to their original position.
-        *this = *this << start;
-        *this = AdditionAvalBval(beforeStart);
-        setNumBits(oldSize);
-    }
-    // If the original vector could have changed from unknown to known or vice versa.
-    if ((other.unknown && !this->unknown) || (!other.unknown && this->unknown)) {
-        setUnknown();
+        // While haven't reached the VPI of the end of the slice, copy all the bits from the other vector.
+        for (; currVPIIndex <= endVPIIndex; currVPIIndex++) {
+            VPI currOtherVPI = other.vector[currVPIIndex - startVPIIndex];
+            // If reached the VPI of the end of the slice and the end of the slice is in the middle of the VPI, copy only the relevant bits.
+            if (currVPIIndex == endVPIIndex && offsetEnd != BITS_IN_CELL - 1) {
+                VPI currOtherVPI = other.vector[endVPIIndex - startVPIIndex];
+                VPI currThisVPI = vector[endVPIIndex];
+                // Leave the bits from the original vector that are not in the slice.
+                uint32_t avalEndThis = currThisVPI.getAval() & (MASK_32 << (offsetEnd + 1));
+                uint32_t bvalEndThis = currThisVPI.getBval() & (MASK_32 << (offsetEnd + 1));
+                // Get the bits from the other vector that are in the slice.
+                uint32_t avalEndOther = currOtherVPI.getAval() & (MASK_32 >> (BITS_IN_CELL - offsetEnd - 1));
+                uint32_t bvalEndOther = currOtherVPI.getBval() & (MASK_32 >> (BITS_IN_CELL - offsetEnd - 1));
+                // Combine the relevant bits from the original vector and the other vector.
+                // If the slice starts and ends in the same cell, leave only the bits that are not in the slice and combine the rest.
+                if (startVPIIndex == endVPIIndex && offsetStart != 0) {
+                    avalEndThis |= avalStartThis;
+                    bvalEndThis |= bvalStartThis;
+                }
+                vector[endVPIIndex].setAval(avalEndThis | avalEndOther);
+                vector[endVPIIndex].setBval(bvalEndThis | bvalEndOther);
+            }
+            // If the end of the slice is at the end of the VPI, copy the whole VPI.
+            else {
+                vector[currVPIIndex].setAval(currOtherVPI.getAval());
+                vector[currVPIIndex].setBval(currOtherVPI.getBval());
+            }
+        }
+        if (vector[endVPIIndex].getBval() != 0) {
+            unknown = true;
+        }
     }
 }
 
@@ -799,14 +841,20 @@ vec4state vec4state::operator+(const vec4state& other) const {
         return vec4state(X, maxNumBits);
     }
     vec4state result = vec4state(ZERO, maxNumBits);
-    // Align the vectors to the same size.
-    vec4state copyThis = *this;
-    vec4state copyOther = other;
-    copyThis.setNumBits(maxNumBits);
-    copyOther.setNumBits(maxNumBits);
     long long carry = 0;
+    long long sum = 0;
     for (long long i = 0; i < result.vectorSize; i++) {
-        long long sum = unsigned long long(copyThis.vector[i].getAval()) + unsigned long long(copyOther.vector[i].getAval()) + carry;
+        VPI currThisVPI = this->vector[i];
+        VPI currOtherVPI = other.vector[i];
+        if (i >= this->vectorSize) {
+            sum = unsigned long long(currOtherVPI.getAval()) + carry;
+        }
+        else if (i >= other.vectorSize) {
+            sum = unsigned long long(currThisVPI.getAval()) + carry;
+        }
+        else {
+            sum = unsigned long long(currThisVPI.getAval()) + unsigned long long(currOtherVPI.getAval()) + carry;
+        }
         // Put in the result vector only the lower 32 bits of the sum.
         result.vector[i].setAval(uint32_t(sum & MASK_32));
         // If the sum is bigger than 32 bits, set the carry to 1 for the next iteration.
@@ -830,42 +878,47 @@ vec4state vec4state::operator-(const vec4state& other) const {
         return vec4state(X, maxNumBits);
     }
     vec4state result = vec4state(ZERO, maxNumBits);
-    // Align the vectors to the same size.
+    // Align this to the maximal size.
     vec4state copyThis = *this;
-    vec4state copyOther = other;
     copyThis.setNumBits(maxNumBits);
-    copyOther.setNumBits(maxNumBits);
-    for (long long i = 0; i < copyThis.getVectorSize(); i++) {
-        VPI currThisVPI = copyThis.vector[i];
-        VPI currOtherVPI = copyOther.vector[i];
-        // If the current VPI in this vector is less than the corresponding one in other vector, borrow from the next VPI of this vector.
-        if (currThisVPI.getAval() < currOtherVPI.getAval()) {
-            // Find the first next VPI in this vector that is not zero.
-            long long firstNotZero = i + 1;
-            while (copyThis.vector[firstNotZero].getAval() == 0 && firstNotZero < copyThis.getVectorSize()) {
-                firstNotZero++;
-            }
-            if (firstNotZero != copyThis.getVectorSize()) {
-                // If possible, borrow from the next VPI.
-                copyThis.vector[firstNotZero].setAval(copyThis.vector[firstNotZero].getAval() - 1);
-                firstNotZero--;
-                for (; firstNotZero > i; firstNotZero--) {
-                    copyThis.vector[firstNotZero].setAval(MASK_32);
-                }
-                // Calculate the fixed value of the current VPI.
-                result.vector[i].setAval(uint32_t(MASK_BIT_33 + currThisVPI.getAval() - currOtherVPI.getAval()));
-            } else {
-                // If there is no VPI to borrow from, the result is negative.
-                for (long long j = 0; j < copyThis.getVectorSize(); j++) {
-                    result.vector[j].setAval(copyThis.vector[j].getAval() - copyOther.vector[j].getAval());
-                }
-                return move(result);
-            }
+    for (long long i = 0; i < result.vectorSize; i++) {
+        // If the current VPI is out of range of the other vector, copy it as is.
+        if (i >= other.vectorSize) {
+            result.vector[i].setAval(copyThis.vector[i].getAval());
         }
-        // Calculate the result as usual.
+        // If the current VPI is not out of range of the other vector, calculate the result.
         else {
-            result.vector[i].setAval(currThisVPI.getAval() - currOtherVPI.getAval());
-        }
+            VPI currThisVPI = copyThis.vector[i];
+            VPI currOtherVPI = other.vector[i];
+            // If the current VPI in this vector is less than the corresponding one in other vector, borrow from the next VPI of this vector.
+            if (currThisVPI.getAval() < currOtherVPI.getAval()) {
+                // Find the first next VPI in this vector that is not zero.
+                long long firstNotZero = i + 1;
+                while (copyThis.vector[firstNotZero].getAval() == 0 && firstNotZero < copyThis.getVectorSize()) {
+                    firstNotZero++;
+                }
+                if (firstNotZero != copyThis.getVectorSize()) {
+                    // If possible, borrow from the next VPI.
+                    copyThis.vector[firstNotZero].setAval(copyThis.vector[firstNotZero].getAval() - 1);
+                    firstNotZero--;
+                    for (; firstNotZero > i; firstNotZero--) {
+                        copyThis.vector[firstNotZero].setAval(MASK_32);
+                    }
+                    // Calculate the fixed value of the current VPI.
+                    result.vector[i].setAval(uint32_t(MASK_BIT_33 + currThisVPI.getAval() - currOtherVPI.getAval()));
+                } else {
+                    // If there is no VPI to borrow from, the result is negative.
+                    for (long long j = 0; j < copyThis.getVectorSize(); j++) {
+                        result.vector[j].setAval(copyThis.vector[j].getAval() - other.vector[j].getAval());
+                    }
+                    return move(result);
+                }
+            }
+            // Calculate the result as usual.
+            else {
+                result.vector[i].setAval(currThisVPI.getAval() - currOtherVPI.getAval());
+            }
+        } 
     }
     return move(result);
 }

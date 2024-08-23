@@ -244,7 +244,7 @@ class vec4state
         vec4state operator+(const vec4state& other) const;
 
         template<typename T, typename enable_if<is_valid_type_for_vec4state<T>::value, bool>::type = true>
-        vec4state operator+(T num) const {
+        vec4state operator+(T num) {
             return *this + vec4state(num);
         }
 
