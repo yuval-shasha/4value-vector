@@ -782,7 +782,7 @@ vec4state vec4state::operator!() const {
     for (int i = 0; i < vectorSize; i++) {
         VPI currVPI = vector[i];
         // Extract the 1 bits.
-        uint32_t oneBits = currVPI.getAval() - (currVPI.getAval() & currVPI.getBval());
+        uint32_t oneBits = currVPI.getOneBits();
         if (oneBits != 0) {
             return vec4state(ZERO, 1);
         }
@@ -1064,8 +1064,7 @@ string vec4state::toString() const {
 vec4state::operator bool() const {
     // If the vector has at least one bit set to 1, return true.
     for (long long i = 0; i < vectorSize; i++) {
-        VPI currVPI = vector[i];
-        uint32_t oneBits = currVPI.getAval() - (currVPI.getAval() & currVPI.getBval());
+        uint32_t oneBits = vector[i].getOneBits();
         if (oneBits != 0) {
             return true;
         }
@@ -1076,9 +1075,8 @@ vec4state::operator bool() const {
 
 void vec4state::convertTo2State() {
     for (int i = 0; i < vectorSize; i++) {
-        VPI currVPI = vector[i];
         // Replace the z bits with x bits.
-        vector[i].setAval(currVPI.getAval() - (currVPI.getAval() & currVPI.getBval()));
+        vector[i].setAval(vector[i].getOneBits());
         // Zero down the unknown bits.
         vector[i].setBval(0);
     }
