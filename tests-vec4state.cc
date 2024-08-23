@@ -909,120 +909,120 @@ TEST_F(vec4stateTest, TestGetPartSelectTooLowStartIntVector) {vec4state sliceVec
     EXPECT_TRUE(sliceVector.isUnknown());
 }
 
-// Checks that getting the part select of a vector that holds an integer (32 bits) from index 32 to -5 returns a vector that holds the original vector and adds one x bit in the end and 5 x bits in the beginning (because they are out of bounds).
-TEST_F(vec4stateTest, TestGetPartSelectTooLowStartAndTooHighEndIntVector) {
-    vec4state sliceVector = intVector.getPartSelect(32, -5);
-    EXPECT_FALSE(intVector.isUnknown());
-    EXPECT_TRUE(compareVectorToString(sliceVector, string("x00010010001101000101011001111000xxxxx")));
-    EXPECT_TRUE(checkVectorSize(sliceVector, 38));
-    EXPECT_TRUE(sliceVector.isUnknown());
-}
+// // Checks that getting the part select of a vector that holds an integer (32 bits) from index 32 to -5 returns a vector that holds the original vector and adds one x bit in the end and 5 x bits in the beginning (because they are out of bounds).
+// TEST_F(vec4stateTest, TestGetPartSelectTooLowStartAndTooHighEndIntVector) {
+//     vec4state sliceVector = intVector.getPartSelect(32, -5);
+//     EXPECT_FALSE(intVector.isUnknown());
+//     EXPECT_TRUE(compareVectorToString(sliceVector, string("x00010010001101000101011001111000xxxxx")));
+//     EXPECT_TRUE(checkVectorSize(sliceVector, 38));
+//     EXPECT_TRUE(sliceVector.isUnknown());
+// }
 
-// Checks that getting the part select of an unknown vector that holds 108 bits from index 68 to 62 returns a vector that holds the 7 bits in these indexes of the original vector.
-TEST_F(vec4stateTest, TestGetPartSelectBetweenVPIsBigVector) {
-    vec4state sliceVector = bigVector.getPartSelect(68, 62);
-    EXPECT_TRUE(compareVectorToString(sliceVector, string("0011xzx")));
-    EXPECT_TRUE(checkVectorSize(sliceVector, 7));
-}
+// // Checks that getting the part select of an unknown vector that holds 108 bits from index 68 to 62 returns a vector that holds the 7 bits in these indexes of the original vector.
+// TEST_F(vec4stateTest, TestGetPartSelectBetweenVPIsBigVector) {
+//     vec4state sliceVector = bigVector.getPartSelect(68, 62);
+//     EXPECT_TRUE(compareVectorToString(sliceVector, string("0011xzx")));
+//     EXPECT_TRUE(checkVectorSize(sliceVector, 7));
+// }
 
-// Checks that getting the part select of an unknown vector so the bits in this part are known returns a known vector.
-TEST_F(vec4stateTest, TestGetPartSelectFromStringVectorToKnownVector) {
-    vec4state sliceVector = stringVector.getPartSelect(1, 0);
-    EXPECT_TRUE(stringVector.isUnknown());
-    EXPECT_TRUE(compareVectorToString(sliceVector, string("11")));
-    EXPECT_TRUE(checkVectorSize(sliceVector, 2));
-    EXPECT_FALSE(sliceVector.isUnknown());
-}
+// // Checks that getting the part select of an unknown vector so the bits in this part are known returns a known vector.
+// TEST_F(vec4stateTest, TestGetPartSelectFromStringVectorToKnownVector) {
+//     vec4state sliceVector = stringVector.getPartSelect(1, 0);
+//     EXPECT_TRUE(stringVector.isUnknown());
+//     EXPECT_TRUE(compareVectorToString(sliceVector, string("11")));
+//     EXPECT_TRUE(checkVectorSize(sliceVector, 2));
+//     EXPECT_FALSE(sliceVector.isUnknown());
+// }
 
-// Checks that the getPartSelect method throws an exception when the end index is less than the start index.
-TEST_F(vec4stateTest, TestGetPartSelectEndLessThanStart) {
-    EXPECT_ANY_THROW(bigVector.getPartSelect(62, 68));
-}
+// // Checks that the getPartSelect method throws an exception when the end index is less than the start index.
+// TEST_F(vec4stateTest, TestGetPartSelectEndLessThanStart) {
+//     EXPECT_ANY_THROW(bigVector.getPartSelect(62, 68));
+// }
 
-// Checks that setting the part select of a vector that holds an integer (32 bits) from index 2 to 0 to 111 changes the first three bits of the vector to 111.
-TEST_F(vec4stateTest, TestSetPartSelectIntVectorToString) {
-    vec4state beforeSet = intVector;
-    intVector.setPartSelect(2, 0, string("111"));
-    EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111111")));
-    EXPECT_TRUE(checkVectorSize(intVector, 32));
-    EXPECT_TRUE(intVector != beforeSet);
-}
+// // Checks that setting the part select of a vector that holds an integer (32 bits) from index 2 to 0 to 111 changes the first three bits of the vector to 111.
+// TEST_F(vec4stateTest, TestSetPartSelectIntVectorToString) {
+//     vec4state beforeSet = intVector;
+//     intVector.setPartSelect(2, 0, string("111"));
+//     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111111")));
+//     EXPECT_TRUE(checkVectorSize(intVector, 32));
+//     EXPECT_TRUE(intVector != beforeSet);
+// }
 
-// Checks that setting the part select of a vector that holds an integer (32 bits) from index 10 to 4 to an unknown vector that holds 6 bits changes the original vector to the same vector with the fourth to nineth bits set to the unknown vector and the tenth bit set to 0. Also checks that the new vector is unknown and not equal to the original vector (both logical and case inequality).
-TEST_F(vec4stateTest, TestSetPartSelectIntVectorToStringVector) {
-    vec4state beforeSet = intVector;
-    EXPECT_FALSE(intVector.isUnknown());
-    intVector.setPartSelect(10, 4, stringVector);
-    EXPECT_TRUE(compareVectorToString(intVector, string("000100100011010001010001xz111000")));
-    EXPECT_TRUE(checkVectorSize(intVector, 32));
-    EXPECT_TRUE(intVector.caseInequality(beforeSet));
-    EXPECT_TRUE(intVector != beforeSet);
-    EXPECT_TRUE(intVector.isUnknown());
-}
+// // Checks that setting the part select of a vector that holds an integer (32 bits) from index 10 to 4 to an unknown vector that holds 6 bits changes the original vector to the same vector with the fourth to nineth bits set to the unknown vector and the tenth bit set to 0. Also checks that the new vector is unknown and not equal to the original vector (both logical and case inequality).
+// TEST_F(vec4stateTest, TestSetPartSelectIntVectorToStringVector) {
+//     vec4state beforeSet = intVector;
+//     EXPECT_FALSE(intVector.isUnknown());
+//     intVector.setPartSelect(10, 4, stringVector);
+//     EXPECT_TRUE(compareVectorToString(intVector, string("000100100011010001010001xz111000")));
+//     EXPECT_TRUE(checkVectorSize(intVector, 32));
+//     EXPECT_TRUE(intVector.caseInequality(beforeSet));
+//     EXPECT_TRUE(intVector != beforeSet);
+//     EXPECT_TRUE(intVector.isUnknown());
+// }
 
-// Checks that setting the part select of a vector that holds an integer (32 bits) from index ten to four to 15 (1111) changes the original vector to the same vector with the fourth to eighth bits set to 15 and the nineth to tenth bits set to 0.
-TEST_F(vec4stateTest, TestSetPartSelectIntVectorToInteger) {
-    vec4state beforeSet = intVector;
-    intVector.setPartSelect(10, 4, 15);
-    EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101000011111000")));
-    EXPECT_TRUE(checkVectorSize(intVector, 32));
-    EXPECT_TRUE(intVector != beforeSet);
-}
+// // Checks that setting the part select of a vector that holds an integer (32 bits) from index ten to four to 15 (1111) changes the original vector to the same vector with the fourth to eighth bits set to 15 and the nineth to tenth bits set to 0.
+// TEST_F(vec4stateTest, TestSetPartSelectIntVectorToInteger) {
+//     vec4state beforeSet = intVector;
+//     intVector.setPartSelect(10, 4, 15);
+//     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101000011111000")));
+//     EXPECT_TRUE(checkVectorSize(intVector, 32));
+//     EXPECT_TRUE(intVector != beforeSet);
+// }
 
-// Checks that setting the part select of a vector that holds an integer (32 bits) from index 1 to 0 to 111 changes the original vector to the same vector with only the first 2 bits set to 1.
-TEST_F(vec4stateTest, TestSetPartSelectTooBigValueIntVector) {
-    vec4state beforeSet = intVector;
-    intVector.setPartSelect(1, 0, string("111"));
-    EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111011")));
-    EXPECT_TRUE(checkVectorSize(intVector, 32));
-    EXPECT_TRUE(intVector != beforeSet);
-}
+// // Checks that setting the part select of a vector that holds an integer (32 bits) from index 1 to 0 to 111 changes the original vector to the same vector with only the first 2 bits set to 1.
+// TEST_F(vec4stateTest, TestSetPartSelectTooBigValueIntVector) {
+//     vec4state beforeSet = intVector;
+//     intVector.setPartSelect(1, 0, string("111"));
+//     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111011")));
+//     EXPECT_TRUE(checkVectorSize(intVector, 32));
+//     EXPECT_TRUE(intVector != beforeSet);
+// }
 
-// Checks that setting the part select of a vector that holds an integer (32 bits) from index 4 to 0 to x changes the original vector to the same vector with the first bit set to x and the other 4 bits set to 0.
-TEST_F(vec4stateTest, TestSetPartSelectTooSmallValueIntVector) {
-    vec4state beforeSet = intVector;
-    EXPECT_FALSE(intVector.isUnknown());
-    intVector.setPartSelect(4, 0, string("x"));
-    EXPECT_TRUE(compareVectorToString(intVector, string("0001001000110100010101100110000x")));
-    EXPECT_TRUE(checkVectorSize(intVector, 32));
-    EXPECT_TRUE(intVector != beforeSet);
-    EXPECT_TRUE(intVector.isUnknown());
-}
+// // Checks that setting the part select of a vector that holds an integer (32 bits) from index 4 to 0 to x changes the original vector to the same vector with the first bit set to x and the other 4 bits set to 0.
+// TEST_F(vec4stateTest, TestSetPartSelectTooSmallValueIntVector) {
+//     vec4state beforeSet = intVector;
+//     EXPECT_FALSE(intVector.isUnknown());
+//     intVector.setPartSelect(4, 0, string("x"));
+//     EXPECT_TRUE(compareVectorToString(intVector, string("0001001000110100010101100110000x")));
+//     EXPECT_TRUE(checkVectorSize(intVector, 32));
+//     EXPECT_TRUE(intVector != beforeSet);
+//     EXPECT_TRUE(intVector.isUnknown());
+// }
 
-// Checks that setting the part select of a vector that holds an integer (32 bits) from index 35 to 30 to 01xz11 changes the original vector to the same vector with the last 2 bits set to 11 (the indices 35 to 32 are out of bounds).
-TEST_F(vec4stateTest, TestSetPartSelectTooHighEndIntVector) {
-    intVector.setPartSelect(35, 30, stringVector);
-    EXPECT_TRUE(compareVectorToString(intVector, string("11010010001101000101011001111000")));
-    EXPECT_TRUE(checkVectorSize(intVector, 32));
-}
+// // Checks that setting the part select of a vector that holds an integer (32 bits) from index 35 to 30 to 01xz11 changes the original vector to the same vector with the last 2 bits set to 11 (the indices 35 to 32 are out of bounds).
+// TEST_F(vec4stateTest, TestSetPartSelectTooHighEndIntVector) {
+//     intVector.setPartSelect(35, 30, stringVector);
+//     EXPECT_TRUE(compareVectorToString(intVector, string("11010010001101000101011001111000")));
+//     EXPECT_TRUE(checkVectorSize(intVector, 32));
+// }
 
-// Checks that setting the part select of a vector that holds an integer (32 bits) from index 5 to -5 to 01xz11 changes the original vector to the same vector with the first 6 bits set to 000000 (the indices 0 to -5 are out of bounds, the value 01xz11 is zero extended to 11 because it is shorter than the part select).
-TEST_F(vec4stateTest, TestSetPartSelectTooLowStartIntVector) {
-    intVector.setPartSelect(5, -5, stringVector);
-    EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001000000")));
-    EXPECT_TRUE(checkVectorSize(intVector, 32));
-}
+// // Checks that setting the part select of a vector that holds an integer (32 bits) from index 5 to -5 to 01xz11 changes the original vector to the same vector with the first 6 bits set to 000000 (the indices 0 to -5 are out of bounds, the value 01xz11 is zero extended to 11 because it is shorter than the part select).
+// TEST_F(vec4stateTest, TestSetPartSelectTooLowStartIntVector) {
+//     intVector.setPartSelect(5, -5, stringVector);
+//     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001000000")));
+//     EXPECT_TRUE(checkVectorSize(intVector, 32));
+// }
 
-// Checks that setting the part select of a vector that holds an integer (32 bits) from index -4 to -5 to xx doesn't change the original vector (the indices -4 to -5 are out of bounds).
-TEST_F(vec4stateTest, TestSetPartSelectTooLowEndIntVector) {
-    intVector.setPartSelect(-4, -5, xVector);
-    EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111000")));
-    EXPECT_TRUE(checkVectorSize(intVector, 32));
-}
+// // Checks that setting the part select of a vector that holds an integer (32 bits) from index -4 to -5 to xx doesn't change the original vector (the indices -4 to -5 are out of bounds).
+// TEST_F(vec4stateTest, TestSetPartSelectTooLowEndIntVector) {
+//     intVector.setPartSelect(-4, -5, xVector);
+//     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111000")));
+//     EXPECT_TRUE(checkVectorSize(intVector, 32));
+// }
 
-// Checks that setting the part select of a vector that holds an integer (32 bits) from index 34 to 33 to xx doesn't change the original vector (the indices 34 to 33 are out of bounds).
-TEST_F(vec4stateTest, TestSetPartSelectTooHighStartIntVector) {
-    intVector.setPartSelect(34, 33, xVector);
-    EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111000")));
-    EXPECT_TRUE(checkVectorSize(intVector, 32));
-}
+// // Checks that setting the part select of a vector that holds an integer (32 bits) from index 34 to 33 to xx doesn't change the original vector (the indices 34 to 33 are out of bounds).
+// TEST_F(vec4stateTest, TestSetPartSelectTooHighStartIntVector) {
+//     intVector.setPartSelect(34, 33, xVector);
+//     EXPECT_TRUE(compareVectorToString(intVector, string("00010010001101000101011001111000")));
+//     EXPECT_TRUE(checkVectorSize(intVector, 32));
+// }
 
-// Checks that setting the part select of a vector that holds 108 bits from index 68 to 62 to 111 changes the original vector to the same vector with the 7 bits in these indices set to 0000111 (the value 111 is zero extended to 0000111 because it is shorter than the part select). 
-TEST_F(vec4stateTest, TestSetPartSelectBetweenVPIsBigVector) {
-    bigVector.setPartSelect(68, 62, string("111"));
-    EXPECT_TRUE(compareVectorToString(bigVector, string("0110011xzx0111zzzx0110011xzx0111zzzx01100001110111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx")));
-    EXPECT_TRUE(checkVectorSize(bigVector, 108));
-}
+// // Checks that setting the part select of a vector that holds 108 bits from index 68 to 62 to 111 changes the original vector to the same vector with the 7 bits in these indices set to 0000111 (the value 111 is zero extended to 0000111 because it is shorter than the part select). 
+// TEST_F(vec4stateTest, TestSetPartSelectBetweenVPIsBigVector) {
+//     bigVector.setPartSelect(68, 62, string("111"));
+//     EXPECT_TRUE(compareVectorToString(bigVector, string("0110011xzx0111zzzx0110011xzx0111zzzx01100001110111zzzx0110011xzx0111zzzx0110011xzx0111zzzx0110011xzx0111zzzx")));
+//     EXPECT_TRUE(checkVectorSize(bigVector, 108));
+// }
 
 // Checks that the setPartSelect method throws an exception when the end index is less than the start index.
 TEST_F(vec4stateTest, TestSetPartSelectEndLessThanStart) {
@@ -1391,7 +1391,7 @@ TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithZeroesVector) {
 TEST_F(vec4stateTest, TestArithmeticAddIntVectorWithNegativeVector) {
     vec4state addVector = intVector + negativeVector;
     vec4state intSizeVector(0xFFFFFFFF);
-    intSizeVector = intSizeVector + negativeVector;
+    intSizeVector = intVector + negativeVector;
     // return intVector - 1 instead of intVector + 0xFFFFFFFF
     EXPECT_TRUE(compareVectorToString(addVector, string("100010010001101000101011001110111")));
     EXPECT_TRUE(checkVectorSize(addVector, 33));

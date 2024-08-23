@@ -613,6 +613,7 @@ void vec4state::setBitSelect(const vec4state& index, const vec4state& newValue) 
 }
 
 vec4state vec4state::getPartSelect(long long end, long long start) const {
+    cout << "this: " << this->toString() << endl;
     // If input is invalid.
     if (end < start) {
         throw vec4stateExceptionInvalidRange(end, start);
@@ -623,14 +624,25 @@ vec4state vec4state::getPartSelect(long long end, long long start) const {
     }
 
     // Extract the relevant VPIs of the vector.
-    long long startVPIIndex = start / BITS_IN_CELL;
+    long long startVPIIndex = max(start / BITS_IN_CELL, long long (0));
     long long lastVPIIndex = end / BITS_IN_CELL;
-    vec4state result = vec4state(ZERO, (lastVPIIndex - startVPIIndex + 1) * BITS_IN_CELL);
+    cout << "startVPIIndex: " << startVPIIndex << endl;
+    cout << "lastVPIIndex: " << lastVPIIndex << endl;
+    vec4state result = vec4state(ZERO, end - start + 1);
+    cout << "result size: " << result.numBits << endl;
+    // Copy the relevant VPIs to the result vector.
     for(long long currVPIIndex = startVPIIndex; currVPIIndex <= lastVPIIndex; currVPIIndex++) {
-        VPI currVPI = vector[currVPIIndex];
+        VPI currVPI;
+        if (currVPIIndex >= vectorSize) {
+            currVPI.setAval(0);
+            currVPI.setBval(0);
+        } else {
+            currVPI = vector[currVPIIndex];
+        }
         result.vector[currVPIIndex - startVPIIndex].setAval(currVPI.getAval());
         result.vector[currVPIIndex - startVPIIndex].setBval(currVPI.getBval());
     }
+    cout << "result: " << result.toString() << endl;
     // Move the bits to the right if the slice starts after index 0.
     if (start >= 0) {
         result = result >> start;

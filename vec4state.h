@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include "vpi.h"
 #include <type_traits>
+#include <memory>
 
 #define MASK_32 0xFFFFFFFF
 #define BITS_IN_CELL 32
@@ -27,7 +28,7 @@ class vec4state
 {
     private:
         // The 4 value vector consists of an array of VPI elements, where each element is 32 bits long that can be either 0, 1, x, or z. The first element is the least significant 32 bits.
-        VPI* vector;
+        unique_ptr<VPI> vector;
         // numBits is the number of bits in the vector.
         long long numBits;
         // vectorSize is the number of VPI elements in the vector.
