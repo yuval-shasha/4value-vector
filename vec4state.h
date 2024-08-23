@@ -28,7 +28,7 @@ class vec4state
 {
     private:
         // The 4 value vector consists of an array of VPI elements, where each element is 32 bits long that can be either 0, 1, x, or z. The first element is the least significant 32 bits.
-        unique_ptr<VPI> vector;
+        shared_ptr<VPI[]> vector;
         // numBits is the number of bits in the vector.
         long long numBits;
         // vectorSize is the number of VPI elements in the vector.
@@ -65,7 +65,7 @@ class vec4state
             numBits = sizeof(T) * BITS_IN_BYTE;
             vectorSize = (numBits + BITS_IN_CELL - 1) / BITS_IN_CELL;
             unknown = false;
-            vector = new VPI[vectorSize];
+            vector = make_shared<VPI[]>(vectorSize);
             int mask = MASK_32;
             for (long long i = 0; i < vectorSize; i++) {
                 vector[i].setAval(uint32_t(num & mask));
@@ -81,7 +81,7 @@ class vec4state
         vec4state(vec4state&& other) noexcept;
 
         // D'tor
-        ~vec4state();
+        ~vec4state() = default;
 
         // Assignment operators
         vec4state& operator=(const vec4state& other);
@@ -297,7 +297,7 @@ class vec4state
         long long getNumBits() const;
 
         // Returns the vector of the VPI elements.
-        VPI* getVector() const;
+        shared_ptr<VPI[]> getVector() const;
 
         // Returns the number of the VPI elements in the vector.
         long long getVectorSize() const;

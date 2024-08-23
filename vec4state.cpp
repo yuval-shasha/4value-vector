@@ -37,7 +37,7 @@ void vec4state::incNumBits(long long newNumBits) {
     long long oldVectorSize = vectorSize;
     numBits = newNumBits;
     vectorSize = calcVectorSize(numBits);
-    VPI* newVector = new VPI[vectorSize];
+    shared_ptr<VPI[]> newVector = make_shared<VPI[]>(vectorSize);
     for (long long i = 0; i < vectorSize; i++) {
         if (i < oldVectorSize) {
             newVector[i] = vector[i];
@@ -46,7 +46,6 @@ void vec4state::incNumBits(long long newNumBits) {
             newVector[i].setBval(0);
         }
     }
-    delete[] vector;
     vector = newVector;
 }
 
@@ -69,7 +68,7 @@ void vec4state::decNumBits(long long newNumBits) {
     long long mask = (long long)(pow(2, offset) - 1);
     numBits = newNumBits;
     vectorSize = calcVectorSize(numBits);
-    VPI* newVector = new VPI[vectorSize];
+    shared_ptr<VPI[]> newVector = make_shared<VPI[]>(vectorSize);
     for (long long i = 0; i <= indexLastCell; i++) {
         VPI currVPI = vector[i];
         // If the current cell is still in range.
@@ -82,7 +81,6 @@ void vec4state::decNumBits(long long newNumBits) {
             newVector[i].setBval(currVPI.getBval() & mask);
         }
     }
-    delete[] vector;
     vector = newVector;
     if (unknown) {
         setUnknown();
@@ -195,7 +193,7 @@ vec4state vec4state::getPartValidRange(long long end) const {
 }
 
 vec4state::vec4state() : vector(nullptr) {
-    vector = new VPI[1];
+    vector = make_shared<VPI[]>(1);
     numBits = 1;
     vectorSize = 1;
     vector[0].setBval(1);
@@ -208,7 +206,7 @@ The function fills the VPI of vector at index currVPIIndex with bits from str, s
 The filling stops when cellSize bits are filled.
 Returns the index of the next bit in the string.
 */
-long long fillVPIWithStringBits(VPI* vector, const string& str, long long cellSize, long long currVPIIndex, long long currStrIndex) {
+long long fillVPIWithStringBits(shared_ptr<VPI[]> vector, const string& str, long long cellSize, long long currVPIIndex, long long currStrIndex) {
     uint32_t aval = 0;
     uint32_t bval = 0;
     for (long long currBitIndex = 0; currBitIndex < cellSize; currBitIndex++) {
@@ -247,7 +245,7 @@ vec4state::vec4state(string str) : vec4state() {
     }
     numBits = str.length();
     vectorSize = calcVectorSize(numBits);
-    vector = new VPI[vectorSize];
+    vector = make_shared<VPI[]>(vectorSize);
     // For each VPI element in the vector, fill it with the bits from the string.
     int numUndividedBits = numBits % BITS_IN_CELL;
     long long currStrIndex = 0;
@@ -257,7 +255,6 @@ vec4state::vec4state(string str) : vec4state() {
             try {
                 currStrIndex = fillVPIWithStringBits(vector, str, numUndividedBits, currVPIIndex, 0);
             } catch (vec4stateExceptionInvalidInput& e) {
-                delete vector;
                 throw e;
             }
         }
@@ -266,7 +263,6 @@ vec4state::vec4state(string str) : vec4state() {
             try {
                 currStrIndex = fillVPIWithStringBits(vector, str, BITS_IN_CELL, currVPIIndex, currStrIndex);
             } catch (vec4stateExceptionInvalidInput& e) {
-                delete vector;
                 throw e;
             }
         }
@@ -284,18 +280,14 @@ vec4state::vec4state(BitValue bit, long long numBits) : vec4state(string(numBits
 }
 
 vec4state::vec4state(const vec4state& other) : numBits(other.numBits), vectorSize(other.vectorSize), unknown(other.unknown), vector(nullptr) {
-    vector = new VPI[vectorSize];
+    vector = make_shared<VPI[]>(vectorSize);
     for (int i = 0; i < vectorSize; i++) {
         vector[i] = other.vector[i];
     }
 }
 
 vec4state::vec4state(vec4state&& other) noexcept : numBits(other.numBits), vectorSize(other.vectorSize), unknown(other.unknown), vector(other.vector) {
-    other.vector = nullptr;
-}
-
-vec4state::~vec4state() {
-    delete[] vector;
+    other.vector.reset();
 }
 
 vec4state& vec4state::operator=(const vec4state& other) {
@@ -395,7 +387,7 @@ vec4state vec4state::operator^(const vec4state& other) const {
 }
 
 // Helper function for zeroing down the bits that are out of range while the vector stays the same size.
-void zeroDownOutOfRangeBits(VPI* vector, long long vectorSize, long long numBits) {
+void zeroDownOutOfRangeBits(shared_ptr<VPI[]> vector, long long vectorSize, long long numBits) {
     long long indexLastCell = calcVectorSize(numBits) - 1;
     long long offset = numBits % BITS_IN_CELL;
     long long mask = (long long)(pow(2, offset) - 1);
@@ -830,7 +822,6 @@ vec4state vec4state::operator<(const vec4state& other) const {
             return vec4state(ZERO, 1);
         }
     }
-
     // If the vectors are equal
     return vec4state(ZERO, 1);
 }
@@ -1098,7 +1089,7 @@ long long vec4state::getNumBits() const {
     return numBits;
 }
 
-VPI* vec4state::getVector() const {
+shared_ptr<VPI[]> vec4state::getVector() const {
     return vector;
 }
 
