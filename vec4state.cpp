@@ -37,7 +37,7 @@ void vec4state::incNumBits(long long newNumBits) {
     long long oldVectorSize = vectorSize;
     numBits = newNumBits;
     vectorSize = calcVectorSize(numBits);
-    shared_ptr<VPI[]> newVector = make_shared<VPI[]>(vectorSize);
+    shared_ptr<VPI[]> newVector(new VPI[vectorSize], default_delete<VPI[]>());
     for (long long i = 0; i < vectorSize; i++) {
         if (i < oldVectorSize) {
             newVector[i] = vector[i];
@@ -68,7 +68,7 @@ void vec4state::decNumBits(long long newNumBits) {
     long long mask = (long long)(pow(2, offset) - 1);
     numBits = newNumBits;
     vectorSize = calcVectorSize(numBits);
-    shared_ptr<VPI[]> newVector = make_shared<VPI[]>(vectorSize);
+    shared_ptr<VPI[]> newVector(new VPI[vectorSize], default_delete<VPI[]>());
     for (long long i = 0; i <= indexLastCell; i++) {
         VPI currVPI = vector[i];
         // If the current cell is still in range.
@@ -193,7 +193,7 @@ vec4state vec4state::getPartValidRange(long long end) const {
 }
 
 vec4state::vec4state() : vector(nullptr) {
-    vector = make_shared<VPI[]>(1);
+    vector = shared_ptr<VPI[]>(new VPI[1], default_delete<VPI[]>());
     numBits = 1;
     vectorSize = 1;
     vector[0].setBval(1);
@@ -245,7 +245,7 @@ vec4state::vec4state(string str) : vec4state() {
     }
     numBits = str.length();
     vectorSize = calcVectorSize(numBits);
-    vector = make_shared<VPI[]>(vectorSize);
+    vector = shared_ptr<VPI[]>(new VPI[vectorSize], default_delete<VPI[]>());
     // For each VPI element in the vector, fill it with the bits from the string.
     int numUndividedBits = numBits % BITS_IN_CELL;
     long long currStrIndex = 0;
@@ -280,7 +280,7 @@ vec4state::vec4state(BitValue bit, long long numBits) : vec4state(string(numBits
 }
 
 vec4state::vec4state(const vec4state& other) : numBits(other.numBits), vectorSize(other.vectorSize), unknown(other.unknown), vector(nullptr) {
-    vector = make_shared<VPI[]>(vectorSize);
+    vector = shared_ptr<VPI[]>(new VPI[vectorSize], default_delete<VPI[]>());
     for (int i = 0; i < vectorSize; i++) {
         vector[i] = other.vector[i];
     }
@@ -435,12 +435,17 @@ vec4state vec4state::operator!=(const vec4state& other) const {
     return !(*this == other);
 }
 
-// TODO: vectors are not equal if they have different number of bits, change tests accordingly.
 vec4state vec4state::caseEquality(const vec4state& other) const {
-    if (numBits != other.numBits) {
-        return vec4state(ZERO, 1);
-    }
-    for (int i = 0; i < vectorSize; i++) {
+    if (numBits < other.numBits) {
+        vec4state copyThis = *this;
+        copyThis.setNumBits(other.numBits);
+        return copyThis.caseEquality(other);
+    } else if (numBits > other.numBits) {
+        vec4state copyOther = other;
+        copyOther.setNumBits(numBits);
+        return this->caseEquality(copyOther);
+    } else {
+        for (int i = 0; i < vectorSize; i++) {
         VPI currThisVPI = vector[i];
         VPI currOtherVPI = other.vector[i];
         if (currThisVPI.getAval() != currOtherVPI.getAval() || currThisVPI.getBval() != currOtherVPI.getBval()) {
@@ -448,6 +453,7 @@ vec4state vec4state::caseEquality(const vec4state& other) const {
         }
     }
     return vec4state(ONE, 1);
+    }
 }
 
 vec4state vec4state::caseInequality(const vec4state& other) const {
@@ -962,7 +968,7 @@ vec4state vec4state::operator*(const vec4state& other) const {
 }
 
 vec4state vec4state::operator/(const vec4state& other) const {
-    if (other == vec4state(0)) {
+    if (!other) {
         throw vec4stateExceptionInvalidOperation("Division by zero is not allowed");
     }
     long long maxNumBits = max(numBits, other.numBits);
@@ -988,7 +994,7 @@ vec4state vec4state::operator/(const vec4state& other) const {
 }
 
 vec4state vec4state::operator%(const vec4state& other) const {
-    if (other == vec4state(0)) {
+    if (!other) {
         throw vec4stateExceptionInvalidOperation("Division by zero is not allowed");
     }
     long long maxNumBits = max(numBits, other.numBits);
