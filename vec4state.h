@@ -21,7 +21,7 @@
 #include <iostream>
 
 #define MASK_32 0xFFFFFFFF
-#define BITS_IN_CELL 32
+#define BITS_IN_VPI 32
 #define BITS_IN_BYTE 8
 
 using namespace std;
@@ -65,7 +65,7 @@ public:
     vec4state();
 
     /**
-     * @brief Integral construct for vec4state.
+     * @brief Integral constructor for vec4state.
      * 
      * Initializes a vector that holds num with number of bits = the size of T.
      * 
@@ -87,9 +87,9 @@ public:
     }
     
     /**
-     * @brief String construct for vec4state.
+     * @brief String constructor for vec4state.
      * 
-     * Initializes a vector of size str.length() with the value of str. If str contains a character that is not a BitValue, the vector is initialized to x and an exception is thrown.
+     * Initializes a vector of size str.length() with the values represented by str. The constructor iterates over the string's characters, translates the BitValues to aval and bval of a VPI, and fills the VPI of vector from last VPI to first VPI with these BitValues. If str contains a character that is not a BitValue, the vector is initialized to x and vec4stateExceptionInvalidInput is thrown.
      * 
      * @param str The value to initialize the vector with, must be a string that holds only BitValues.
      */
@@ -98,16 +98,16 @@ public:
     /**
      * @brief Copy constructor for vec4state.
      * 
-     * Initializes a new vector with the same values as other.
+     * Initializes a new vector and copies the values from the other vector to the new vector.
      * 
-     * @param other The vector to copy.
+     * @param other The vector to copy from.
      */
     vec4state(const vec4state& other);
 
     /**
      * @brief Move constructor for vec4state.
      * 
-     * Initializes a new vector with the same values as other, and transfers the ownership of the vector to the new object.
+     * Initializes a new vector with the same values as other, and transfers the ownership of the vector to the new object. The other vector is left in a valid but unspecified state.
      * 
      * @param other The vector to move from.
      */
@@ -116,7 +116,7 @@ public:
     /**
      * @brief Assignment operator for vec4state.
      * 
-     * Assigns the values of other to this vector.
+     * Assigns the values of other to this vector. If the other vector is shorter than this vector, zeroes down the bits that are out of range.
      * 
      * @param other The vector to assign from.
      * @return A reference to this vector.
@@ -820,10 +820,10 @@ private:
     /**
      * @brief Single repeated BitValue constructor for vec4state.
      * 
-     * Initializes a vector with a single bit (that can be either 0, 1, x, or z) repeated numBits times. If numBits is non-positive or bit is not a BitValue, the vector is default initialized and an exception is thrown. 
+     * Initializes a vector with a single bit (that can be either 0, 1, x, or z) repeated numBits times. If numBits is non-positive or bit is not a BitValue, the vector is default initialized and vec4stateExceptionInvalidSize or vec4stateExceptionInvalidInput is thrown, respectively.
      * 
-     * @param bit 
-     * @param numBits 
+     * @param bit The bit to repeat.
+     * @param numBits The number of bits in the vector.
      */
     vec4state(BitValue bit, long long numBits);
 
@@ -839,59 +839,29 @@ private:
     /**
      * @brief Truncate number of bits for vec4state.
      * 
-     * Decreases the number of bits in the vector to newNumBits by truncating the vector. Throws an exception if newNumBits is greater than the current number of bits or non-positive. If newNumBits is the same as the current number of bits, the vector remains unchanged.
+     * Decreases the number of bits in the vector to newNumBits by assigning a smaller VPI array to this vector, copying the values that are in the new range from the original array to the new one, and truncating the VPI that are not in the new range. Throws vec4stateExceptionInvalidSize if newNumBits is greater than the current number of bits or negative. If newNumBits is the same as the current number of bits, the vector remains unchanged. If newNumBits is 0, the vector is truncated to a single x bit.
      * 
-     * @param newNumBits 
+     * @param newNumBits The new number of bits in the vector.
      */
     void decNumBits(long long newNumBits);
 
     /**
      * @brief Extract number from vector for vec4state.
      * 
-     * Returns the numerical value that the vector holds. This method can be used only if the vector has up to 2 VPI elements (so it's value can be put in a 64-bit numerical type) and has no unknown bits. If the vector has more than 2 VPI elements or has unknown bits, an exception is thrown.
+     * Calculates the numerical value that the vector holds by iterating over the vector's VPIs, adding and shifting them. This method can be used only if the vector has up to 2 VPI elements (so it's value can be represented by 64 bits) and has no unknown bits. If the vector has more than 2 VPI elements, vec4stateExceptionInvalidSize is throwns. If the vector has unknown bits, vec4stateExceptionUnknownVector is thrown.
      * 
      * @return The numerical value that the vector holds.
      */
     long long extractNumberFromVector() const;
 
     /**
-     * @brief Bitwise AND operation between aval and bval of VPIs for vec4state.
-     * 
-     * Calculates the bitwise AND of the aval of the VPIs of this vector with the aval of the VPIs of other vector, and the bitwise AND of the bval of the VPIs of this vector with the bval of the VPIs of other vector. The result is a new vector where the aval is the result of the bitwise AND operation between the aval of the VPIs of the vectors, and the bval is the result of the bitwise AND operation between the bval of the VPIs of the vectors.
-     * 
-     * @param other The vector to perform the bitwise AND operation with.
-     * @return A new vector that holds the result of the bitwise AND operation between aval and bval of the VPIs.
-     */
-    vec4state bitwiseAndAvalBval(const vec4state& other);
-
-    /**
-     * @brief Addition of aval and bval of VPIs for vec4state.
-     * 
-     * Calculates the addition of the aval of the VPIs of this vector with the aval of the VPIs of other vector, and the addition of the bval of the VPIs of this vector with the bval of the VPIs of other vector. The result is a new vector where the aval is the result of the addition of the aval of the VPIs of the vectors, and the bval is the result of the addition of the bval of the VPIs of the vectors.
-     * 
-     * @param other The vector to perform the addition operation with.
-     * @return A new vector that holds the result of the addition operation between aval and bval of the VPIs.
-     */
-    vec4state AdditionAvalBval(const vec4state& other) const;
-
-    /**
      * @brief Sets the number of bits to a new number for vec4state.
      * 
-     * Sets the number of bits in the vector to newNumBits by truncating or extending the vector. If newNumBits is less than the current number of bits, the vector is truncated. If newNumBits is greater than the current number of bits, the vector is zero-extended. If newNumBits is the same as the current number of bits, the vector remains unchanged.
+     * Sets the number of bits in the vector to newNumBits by truncating or extending the vector (using decNumBits / incNumBits, respectively). If newNumBits is less than the current number of bits, the vector is truncated. If newNumBits is greater than the current number of bits, the vector is zero-extended. If newNumBits is the same as the current number of bits, the vector remains unchanged. If newNumBits is negative, vec4stateExceptionInvalidSize is thrown.
      * 
-     * @param newNumBits 
+     * @param newNumBits The new number of bits in the vector.
      */
     void setNumBits(long long newNumBits);
-
-    /**
-     * @brief Gets the slice of the vector from the first index to end index for vec4state.
-     * 
-     * Returns a vector which holds the values of this vector from the first bit to end bit, where end is in the range of the number of bits of this vector. If end is negative or out of range, an exception is thrown.
-     * 
-     * @param end The index of the last bit in the slice.
-     * @return A new vector that holds the slice of the vector from the first index to end index.
-     */
-    vec4state getPartValidRange(long long end) const;
 
     /**
      * @brief Sets unknown field for vec4state.

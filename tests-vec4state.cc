@@ -47,6 +47,7 @@ TEST_F(vec4stateTest, TestDefaultConstructor) {
     vec4state testVector;
     EXPECT_TRUE(compareVectorToString(testVector, string("x")));
     EXPECT_TRUE(checkVectorSize(testVector, 1));
+    EXPECT_TRUE(testVector.isUnknown());
 }
 
 // Checks that the constructor creates a 32-bit vector that stores the value of the integer passed to it.
@@ -1570,3 +1571,5 @@ TEST_F(vec4stateTest, TestConversionToBoolStringVector) {
     EXPECT_TRUE(stringVector);
 }
 */
+
+// TODO: add tests for getters and setters

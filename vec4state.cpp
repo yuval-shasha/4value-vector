@@ -72,14 +72,13 @@ void vec4state::incNumBits(long long newNumBits) {
     }
     vector = newVector;
 }
-// TODO: continue documenting from here, change unknown flag where possible.
 
 /**
  * @brief Truncate number of bits for vec4state.
  * 
- * Decreases the number of bits in the vector to newNumBits by truncating the vector. Throws vec4stateExceptionInvalidSize if newNumBits is greater than the current number of bits or negative. If newNumBits is the same as the current number of bits, the vector remains unchanged. If newNumBits is 0, the vector is truncated to a single x bit.
+ * Decreases the number of bits in the vector to newNumBits by assigning a smaller VPI array to this vector, copying the values that are in the new range from the original array to the new one, and truncating the VPI that are not in the new range. Throws vec4stateExceptionInvalidSize if newNumBits is greater than the current number of bits or negative. If newNumBits is the same as the current number of bits, the vector remains unchanged. If newNumBits is 0, the vector is truncated to a single x bit.
  * 
- * @param newNumBits 
+ * @param newNumBits The new number of bits in the vector.
  */
 void vec4state::decNumBits(long long newNumBits) {
     if (newNumBits < 0) {
@@ -99,11 +98,17 @@ void vec4state::decNumBits(long long newNumBits) {
     long long offset = newNumBits % BITS_IN_VPI;
     long long mask = (long long)(pow(2, offset) - 1);
     numBits = newNumBits;
-    // If no need to add more VPI elements, remove the unnecessary bits from the last VPI.
+    // If no need to delete VPI elements, remove the unnecessary bits from the last VPI.
     if (vectorSize == indexLastCell + 1) {
         if (offset != 0) {
             vector[indexLastCell].setAval(vector[indexLastCell].getAval() & mask);
             vector[indexLastCell].setBval(vector[indexLastCell].getBval() & mask);
+        }
+        // If the new last cell still holds unknown bits, the vector holds unknown bits. Otherwise, if the vector was unknown before, check the rest of the vector.
+        if (vector[indexLastCell].getBval() != 0) {
+            unknown = true;
+        } else if (unknown) {
+            setUnknown();
         }
     }
     // If need to remove VPI elements, create a new array with the new size and copy the values that are still in range from the old array.
@@ -124,87 +129,52 @@ void vec4state::decNumBits(long long newNumBits) {
             else if (offset != 0) {
                 newVector[i].setAval(currVPI.getAval() & mask);
                 newVector[i].setBval(currVPI.getBval() & mask);
+                // If the new last cell holds unknown bits, the vector holds unknown bits.
+                if (vector[indexLastCell].getBval() != 0) {
+                    unknown = true;
+                }
             }
         }
         vector = newVector;
     }
-    // If the vector held unknown bits, check if they are still in the vector.
-    if (unknown) {
-        setUnknown();
-    }
 }
 
+/**
+ * @brief Extract number from vector for vec4state.
+ * 
+ * Calculates the numerical value that the vector holds by iterating over the vector's VPIs, adding and shifting them. This method can be used only if the vector has up to 2 VPI elements (so it's value can be represented by 64 bits) and has no unknown bits. If the vector has more than 2 VPI elements, vec4stateExceptionInvalidSize is throwns. If the vector has unknown bits, vec4stateExceptionUnknownVector is thrown.
+ * 
+ * @return The numerical value that the vector holds.
+ */
 long long vec4state::extractNumberFromVector() const {
-    // If the vector has 1's after the 64th bit, the number is too large to be used as an index.
+    // If the vector has 1's after the 64th bit, the value is too large to be represented by 64 bits.
     for (long long i = vectorSize - 1; i >= CELLS_IN_INDEX_VECTOR; i--) {
         if (vector[i].getAval() != 0) {
             throw vec4stateExceptionInvalidSize("Cannot convert a vector that stores more than 64 bits to a number");
         }
     }
+    // If the vector has unknown bits, the value cannot be calculated.
     if (unknown) {
         throw vec4stateExceptionUnknownVector("Cannot convert unknown vector to a number");
     }
+    // If the vector holds a value that can be represented by 64 bits, iterate over the VPI elements and calculate the value by adding and shifting the values of the VPI elements.
     long long result = 0;
-    for (long long i = min(vectorSize, long long(CELLS_IN_INDEX_VECTOR)) - 1; i >= 0; i--) {
-        result = result << BITS_IN_VPI;
+    for (long long i = vectorSize - 1; i >= 0; i--) {
         result += vector[i].getAval();
+        if (i > 0) {
+            result <<= BITS_IN_VPI;
+        }
     }
     return result;
 }
 
-vec4state vec4state::bitwiseAndAvalBval(const vec4state& other) {
-    long long maxSize = max(numBits, other.numBits);
-    vec4state result = vec4state(ZERO, maxSize);
-    for (long long i = 0; i < result.vectorSize; i++) {
-        VPI currThisVPI = this->vector[i];
-        VPI currOtherVPI = other.vector[i];
-        // If the current VPI can be calculated with both vectors.
-        if (i < this->vectorSize && i < other.vectorSize) {
-            result.vector[i].setAval(currThisVPI.getAval() & currOtherVPI.getAval());
-            result.vector[i].setBval(currThisVPI.getBval() & currOtherVPI.getBval());
-        }
-        // If reached end of one of the vectors, result is zero from then on.
-        else {
-            result.vector[i].setAval(0);
-            result.vector[i].setBval(0);
-        }
-        // If the new bval is positive, result is unknown.
-        if (result.vector[i].getBval() != 0) {
-            result.unknown = true;
-        }
-    }
-    return move(result);
-}
-
-vec4state vec4state::AdditionAvalBval(const vec4state& other) const {
-    long long maxSize = max(numBits, other.numBits);
-    vec4state result = vec4state(ZERO, maxSize);
-    for (long long i = 0; i < result.vectorSize; i++) {
-        VPI currThisVPI = this->vector[i];
-        VPI currOtherVPI = other.vector[i];
-        // If the current VPI can be calculated with both vectors.
-        if (i < this->vectorSize && i < other.vectorSize) {
-            result.vector[i].setAval(currThisVPI.getAval() + currOtherVPI.getAval());
-            result.vector[i].setBval(currThisVPI.getBval() + currOtherVPI.getBval());
-        }
-        // If reached end of this, copy only other's cells.
-        else if (i < other.vectorSize) {
-            result.vector[i].setAval(currOtherVPI.getAval());
-            result.vector[i].setBval(currOtherVPI.getBval());
-        }
-        // If reached end of other, copy only this's cells.
-        else {
-            result.vector[i].setAval(currThisVPI.getAval());
-            result.vector[i].setBval(currThisVPI.getBval());
-        }
-        // If the new bval is positive, result is unknown.
-        if (result.vector[i].getBval() != 0) {
-            result.unknown = true;
-        }
-    }
-    return move(result);
-}
-
+/**
+ * @brief Sets the number of bits to a new number for vec4state.
+ * 
+ * Sets the number of bits in the vector to newNumBits by truncating or extending the vector (using decNumBits / incNumBits, respectively). If newNumBits is less than the current number of bits, the vector is truncated. If newNumBits is greater than the current number of bits, the vector is zero-extended. If newNumBits is the same as the current number of bits, the vector remains unchanged. If newNumBits is negative, vec4stateExceptionInvalidSize is thrown.
+ * 
+ * @param newNumBits The new number of bits in the vector.
+ */
 void vec4state::setNumBits(long long newNumBits) {
     if (newNumBits < 0) {
         throw vec4stateExceptionInvalidSize("Number of bits must be non-negative");
@@ -219,45 +189,40 @@ void vec4state::setNumBits(long long newNumBits) {
     }
 }
 
-vec4state vec4state::getPartValidRange(long long end) const {
-    if (end < 0) {
-        throw vec4stateExceptionInvalidIndex("end must be non-negative");
-    }
-    if (end > numBits) {
-        throw vec4stateExceptionInvalidIndex("end must be less than the number of bits in the vector");
-    }
-    vec4state result = vec4state(Z, end);
-    for (long long i = 0; i < result.vectorSize; i++) {
-        VPI currThisVPI = vector[i];
-        VPI currResultVPI = result.vector[i];
-        result.vector[i].setAval(currThisVPI.getAval() & currResultVPI.getAval());
-        result.vector[i].setBval(currThisVPI.getBval() & currResultVPI.getBval());
-        if (result.vector[i].getBval() != 0) {
-            result.unknown = true;
-        }
-    }
-    return move(result);
-}
-
+/**
+ * @brief Default constructor for vec4state.
+ * 
+ * Initializes a 1-bit vector, initialized to x.
+ */
 vec4state::vec4state() : vector(nullptr) {
     vector = shared_ptr<VPI[]>(new VPI[1], default_delete<VPI[]>());
     numBits = 1;
     vectorSize = 1;
+    vector[0].setAval(0);
     vector[0].setBval(1);
-    unknown = false;
+    unknown = true;
 }
 
-/*
-Helper function for filling the vector with bits from a string.
-The function fills the VPI of vector at index currVPIIndex with bits from str, starting from index currStrIndex.
-The filling stops when cellSize bits are filled.
-Returns the index of the next bit in the string.
-*/
-long long fillVPIWithStringBits(shared_ptr<VPI[]> vector, const string& str, long long cellSize, long long currVPIIndex, long long currStrIndex) {
+/**
+ * @brief Helper function for filling the vector with bits from a string.
+ * 
+ * The function iterates over the string's characters (starting from index startStrIndex), translates the BitValues to aval and bval of a VPI, and fills the VPI of vector at index VPIIndex with these BitValues. The filling stops when cellSize bits are filled. If str contains invalid characters, vec4stateExceptionInvalidInput is thrown.
+ * 
+ * @param vector The vector to fill.
+ * @param str The string to read the bits from.
+ * @param cellSize The number of bits to fill in the VPI.
+ * @param VPIIndex The index of the VPI in the vector to fill.
+ * @param startStrIndex The index of the first bit in the string to start reading from.
+ * @return The index of the next bit in the string.
+ */
+long long fillVPIWithStringBits(shared_ptr<VPI[]> vector, const string& str, long long cellSize, long long VPIIndex, long long startStrIndex) {
     uint32_t aval = 0;
     uint32_t bval = 0;
+    // Iterate over the string's characters and fill the VPI with the bits until reaching cellSize.
+    long long currStrIndex = startStrIndex;
     for (long long currBitIndex = 0; currBitIndex < cellSize; currBitIndex++) {
         switch(str[currStrIndex]) {
+            // Translate the BitValues to aval and bval of VPI.
             case ZERO:
                 break;
             case ONE:
@@ -273,18 +238,25 @@ long long fillVPIWithStringBits(shared_ptr<VPI[]> vector, const string& str, lon
             default:
                 throw vec4stateExceptionInvalidInput("Invalid bit: " + str[currStrIndex]);
         }
-        // If the current bit is not the last bit in the cell, shift the bits to the left.
+        // If the current bit is not the last bit in the cell, shift the current values to the left to keep on adding.
         if (currBitIndex < cellSize - 1) {
             aval = aval << 1;
             bval = bval << 1;
         }
         currStrIndex++;
     }
-    vector[currVPIIndex].setAval(aval);
-    vector[currVPIIndex].setBval(bval);
+    vector[VPIIndex].setAval(aval);
+    vector[VPIIndex].setBval(bval);
     return currStrIndex;
 }
 
+/**
+ * @brief String constructor for vec4state.
+ * 
+ * Initializes a vector of size str.length() with the values represented by str. The constructor iterates over the string's characters, translates the BitValues to aval and bval of a VPI, and fills the VPI of vector from last VPI to first VPI with these BitValues. If str contains a character that is not a BitValue, the vector is initialized to x and vec4stateExceptionInvalidInput is thrown.
+ * 
+ * @param str The value to initialize the vector with, must be a string that holds only BitValues.
+ */
 vec4state::vec4state(string str) : vec4state() {
     // If the string is empty, creates a default vector.
     if (str.length() == 0) {
@@ -297,7 +269,7 @@ vec4state::vec4state(string str) : vec4state() {
     int numUndividedBits = numBits % BITS_IN_VPI;
     long long currStrIndex = 0;
     for (long long currVPIIndex = vectorSize - 1; currVPIIndex >= 0; currVPIIndex--) {
-        // The last element gets a special case because when the c'tor receives a string, it reads the string's characters from the MSB to the LSB, translates them to VPIs, and stores them in the vector. If the string's length doesn't divide by 32, then the last VPI (where the 32 MSBs are stored) needs alignment to 32 bits (by padding it with zeroes).
+        // The constructor reads the string's characters from the MSB to the LSB, therefore if the string's length doesn't divide by 32, then the last VPI (where the 32 MSBs are stored) needs alignment to 32 bits (by zero-extension).
         if (currVPIIndex == vectorSize - 1 && numUndividedBits != 0) {
             try {
                 currStrIndex = fillVPIWithStringBits(vector, str, numUndividedBits, currVPIIndex, 0);
@@ -305,7 +277,7 @@ vec4state::vec4state(string str) : vec4state() {
                 throw e;
             }
         }
-        // For the rest of the elements in the vector, fill them with the bits from the string.
+        // For the rest of the elements in the vector, fill them with the bits from the string as usual.
         else {
             try {
                 currStrIndex = fillVPIWithStringBits(vector, str, BITS_IN_VPI, currVPIIndex, currStrIndex);
@@ -316,7 +288,15 @@ vec4state::vec4state(string str) : vec4state() {
     }
     setUnknown();
 }
-    
+
+/**
+ * @brief Single repeated BitValue constructor for vec4state.
+ * 
+ * Initializes a vector with a single bit (that can be either 0, 1, x, or z) repeated numBits times. If numBits is non-positive or bit is not a BitValue, the vector is default initialized and vec4stateExceptionInvalidSize or vec4stateExceptionInvalidInput is thrown, respectively. 
+ * 
+ * @param bit The bit to repeat.
+ * @param numBits The number of bits in the vector.
+ */
 vec4state::vec4state(BitValue bit, long long numBits) : vec4state(string(numBits, bit)) {
     if (bit != ZERO && bit != ONE && bit != X && bit != Z) {
         throw vec4stateExceptionInvalidInput("Invalid bit");
@@ -326,6 +306,13 @@ vec4state::vec4state(BitValue bit, long long numBits) : vec4state(string(numBits
     }
 }
 
+/**
+ * @brief Copy constructor for vec4state.
+ * 
+ * Initializes a new vector and copies the values from the other vector to the new vector.
+ * 
+ * @param other The vector to copy from.
+ */
 vec4state::vec4state(const vec4state& other) : numBits(other.numBits), vectorSize(other.vectorSize), unknown(other.unknown), vector(nullptr) {
     vector = shared_ptr<VPI[]>(new VPI[vectorSize], default_delete<VPI[]>());
     for (int i = 0; i < vectorSize; i++) {
@@ -333,26 +320,40 @@ vec4state::vec4state(const vec4state& other) : numBits(other.numBits), vectorSiz
     }
 }
 
+/**
+ * @brief Move constructor for vec4state.
+ * 
+ * Initializes a new vector with the same values as other, and transfers the ownership of the vector to the new object. The other vector is left in a valid but unspecified state.
+ * 
+ * @param other The vector to move from.
+ */
 vec4state::vec4state(vec4state&& other) noexcept : numBits(other.numBits), vectorSize(other.vectorSize), unknown(other.unknown), vector(other.vector) {
     other.vector.reset();
 }
 
+/**
+ * @brief Assignment operator for vec4state.
+ * 
+ * Assigns the values of other to this vector. If the other vector is shorter than this vector, zeroes down the bits that are out of range.
+ * 
+ * @param other The vector to assign from.
+ * @return A reference to this vector.
+ */
 vec4state& vec4state::operator=(const vec4state& other) {
     if (this == &other) {
         return *this;
     }
     // Change the value of unknown because assigning another value.
     unknown = false;
-    // Setting this's bits to the other's bits.
+    // Setting this vector's bits to the other vector's bits.
     for (long long i = 0; i < min(this->vectorSize, other.vectorSize); i++) {
         this->vector[i] = other.vector[i];
-        // If the other's vector has unknown bits, this's vector has unknown bits.
+        // If the other's vector has unknown bits, this vector has unknown bits.
         if (vector[i].getBval() != 0) {
             unknown = true;
         }
     }
-    // In case the other's vector is shorter than this's vector:
-    // put 0's in the remaining cells.
+    // In case the other vector is shorter than this vector, put 0's in the remaining cells.
     if (other.vectorSize < vectorSize) {
         for (long long i = other.vectorSize; i < vectorSize; i++) {
             vector[i].setAval(0);
@@ -367,6 +368,7 @@ vec4state& vec4state::operator=(const vec4state& other) {
     return *this;
 }
 
+// TODO: continue documenting from here
 vec4state vec4state::operator&(const vec4state& other) const {
     vec4state result = vec4state(ZERO, max(numBits, other.numBits));
     // If the vectors have different number of bits, change the size of the smaller vector to the size of the larger vector by padding it with 0's.
