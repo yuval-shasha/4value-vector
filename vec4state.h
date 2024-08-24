@@ -141,6 +141,8 @@ public:
     /**
      * @brief Bool conversion operator for vec4state.
      * 
+     * Checks if the vector holds at least one 1 bit. This is done by iterating over the vector's VPIs, and checking if at least one of the VPIs has a bit set to 1.
+     * 
      * @return true if the vector holds at least one 1 bit.
      * @return false if the vector holds only 0 or unknown bits.
      */
@@ -149,7 +151,7 @@ public:
     /**
      * @brief Bitwise AND operator for vec4state.
      * 
-     * Calculates the bitwise AND of a bit in this vector with the corresponding bit in the other vector, resulting in one bit for each bit of the vectors. If at least one of the bits is 0, the result bit is 0. If both bits are 1, the result bit is 1. If at least one of the bits is unknown, the result bit is x. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * Calculates the bitwise AND of a bit in this vector with the corresponding bit in the other vector, resulting in one bit for each bit of the vectors. If at least one of the bits is 0, the result bit is 0. If both bits are 1, the result bit is 1. If at least one of the bits is unknown, the result bit is x. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. The method calculates the bitwise NOT of each vector, then calculates the bitwise OR of the NOT vectors, and finally calculates the bitwise NOT of the result vector.
      * 
      * @param other The vector to perform the bitwise AND operation with.
      * @return A new vector that holds the result of the bitwise AND operation.
@@ -159,7 +161,7 @@ public:
     /**
      * @brief Bitwise AND operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then calculates the bitwise AND of a bit in this vector with the corresponding bit in num, resulting in one bit for each bit of the vectors. If at least one of the bits is 0, the result bit is 0. If both bits are 1, the result bit is 1. If at least one of the bits is unknown, the result bit is x. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * Creates a vec4state that holds the value of num, then calculates the bitwise AND of a bit in this vector with the corresponding bit in num, resulting in one bit for each bit of the vectors. If at least one of the bits is 0, the result bit is 0. If both bits are 1, the result bit is 1. If at least one of the bits is unknown, the result bit is x. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. The method calculates the bitwise NOT of each vector, then calculates the bitwise OR of the NOT vectors, and finally calculates the bitwise NOT of the result vector.
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to perform the bitwise AND operation with.
@@ -197,7 +199,7 @@ public:
     /**
      * @brief Bitwise XOR operator for vec4state.
      * 
-     * Calculates the bitwise XOR of a bit in this vector with the corresponding bit in the other vector, resulting in one bit for each bit of the vectors. If at least one of the bits is unknown, the result bit is x. If both bits are equal, the result bit is 0. If the two bits are not equal, the result bit is 1. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * Calculates the bitwise XOR of a bit in this vector with the corresponding bit in the other vector, resulting in one bit for each bit of the vectors. If at least one of the bits is unknown, the result bit is x. If both bits are equal, the result bit is 0. If the two bits are not equal, the result bit is 1. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. The method calculates the bitwise AND between each vector and the bitwise NOT of the other vector, then calculates the bitwise OR of the two results.
      * 
      * @param other The vector to perform the bitwise XOR operation with.
      * @return A new vector that holds the result of the bitwise XOR operation.
@@ -207,7 +209,7 @@ public:
     /**
      * @brief Bitwise XOR operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then calculates the bitwise XOR of a bit in this vector with the corresponding bit in num, resulting in one bit for each bit of the vectors. If at least one of the bits is unknown, the result bit is x. If both bits are equal, the result bit is 0. If the two bits are not equal, the result bit is 1. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * Creates a vec4state that holds the value of num, then calculates the bitwise XOR of a bit in this vector with the corresponding bit in num, resulting in one bit for each bit of the vectors. If at least one of the bits is unknown, the result bit is x. If both bits are equal, the result bit is 0. If the two bits are not equal, the result bit is 1. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. The method calculates the bitwise AND between each vector and the bitwise NOT of the other vector, then calculates the bitwise OR of the two results.
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to perform the bitwise XOR operation with.
@@ -221,7 +223,7 @@ public:
     /**
      * @brief Bitwise NOT operator for vec4state.
      * 
-     * Calculates the bitwise NOT of each bit in the vector, resulting in one bit for each bit of the vector. If the bit is 0, the result bit is 1. If the bit is 1, the result bit is 0. If the bit is unknown, the result bit is x.
+     * Calculates the bitwise NOT of each bit in the vector, resulting in one bit for each bit of the vector. If the bit is 0, the result bit is 1. If the bit is 1, the result bit is 0. If the bit is unknown, the result bit is x. The method iterates over the vector's VPIs, and sets each bit in the aval to 1 only if the corresponding bit in the original vector is 0 (in any other case, the bit is set to 0, which means it can be either 0 or x). The bval stays the same (which means every known bit stays known and every unknown bit can be only x). Then the method zeroes down the bits that are out of range (because they have been set to 1 in the bitwise NOT).
      * 
      * @return A new vector that holds the result of the bitwise NOT operation.
      */
@@ -230,7 +232,7 @@ public:
     /**
      * @brief Logical equality operator for vec4state.
      * 
-     * Compares this vector to other vector bit for bit.
+     * Compares this vector to other vector bit for bit. This is done by calculating the bitwise XOR of the two vectors, and then checking if the result vector is zero. If the result vector holds at least one 1 bit, the vectors are not equal. If the result vector has unknown bits, the comparison is ambiguous and the method returns x. In any other case, if the result vector is only 0's, the vectors are equal.
      * 
      * @param other The vector to compare to.
      * @return 1'b0 if the comparison fails.
@@ -242,7 +244,7 @@ public:
     /**
      * @brief Logical equality operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then compares this vector to num bit for bit.
+     * Creates a vec4state that holds the value of num, then compares this vector to num bit for bit. This is done by calculating the bitwise XOR of the two vectors, and then checking if the result vector is zero. If the result vector holds at least one 1 bit, the vectors are not equal. If the result vector has unknown bits, the comparison is ambiguous and the method returns x. In any other case, if the result vector is only 0's, the vectors are equal.
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to compare to.
@@ -258,7 +260,7 @@ public:
     /**
      * @brief Logical inequality operator for vec4state.
      * 
-     * Compares this vector to other vector bit for bit.
+     * Compares this vector to other vector bit for bit. This is done by checking if the vectors are equal using the logical equality operator, and then negating the result.
      * 
      * @param other The vector to compare to.
      * @return 1'b1 if the comparison fails.
@@ -270,7 +272,7 @@ public:
     /**
      * @brief Logical inequality operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then compares this vector to num bit for bit.
+     * Creates a vec4state that holds the value of num, then compares this vector to num bit for bit. This is done by checking if the vectors are equal using the logical equality operator, and then negating the result.
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to compare to.
@@ -286,7 +288,7 @@ public:
     /**
      * @brief Case equality operator for vec4state.
      * 
-     * Compares this vector to other vector bit for bit, where the unknown bits are included in the comparison and shall match for the result to be considered equal.
+     * Compares this vector to other vector bit for bit, where the unknown bits are included in the comparison and shall match for the result to be considered equal. If the vectors are of different lengths, the shorter vector is zero-extended to the size of the longer vector. The method iterates over the vectors' VPIs, and checks if the aval and bval of each VPI are equal. If at least one of the VPIs is not equal, the vectors are not equal. If all of the VPIs are equal, the vectors are equal.
      * 
      * @param other The vector to compare to.
      * @return 1'b0 if the comparison fails.
@@ -297,7 +299,7 @@ public:
     /**
      * @brief Case equality operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then compares this vector to other vector bit for bit, where the unknown bits are included in the comparison and shall match for the result to be considered equal.
+     * Creates a vec4state that holds the value of num, then compares this vector to other vector bit for bit, where the unknown bits are included in the comparison and shall match for the result to be considered equal. If the vectors are of different lengths, the shorter vector is zero-extended to the size of the longer vector. The method iterates over the vectors' VPIs, and checks if the aval and bval of each VPI are equal. If at least one of the VPIs is not equal, the vectors are not equal. If all of the VPIs are equal, the vectors are equal.
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to compare to.
@@ -312,7 +314,7 @@ public:
     /**
      * @brief Case inequality operator for vec4state.
      * 
-     * Compares this vector to other vector bit for bit, where the unknown bits are included in the comparison and shall not match for the result to be considered unequal.
+     * Compares this vector to other vector bit for bit, where the unknown bits are included in the comparison and shall not match for the result to be considered unequal. If the vectors are of different lengths, the shorter vector is zero-extended to the size of the longer vector. The method calculates the case equality of the vectors and then negates the result.
      * 
      * @param other The vector to compare to.
      * @return 1'b1 if the comparison fails.
@@ -323,7 +325,7 @@ public:
     /**
      * @brief Case inequality operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then compares this vector to other vector bit for bit, where the unknown bits are included in the comparison and shall not match for the result to be considered unequal.
+     * Creates a vec4state that holds the value of num, then compares this vector to other vector bit for bit, where the unknown bits are included in the comparison and shall not match for the result to be considered unequal. If the vectors are of different lengths, the shorter vector is zero-extended to the size of the longer vector. The method calculates the case equality of the vectors and then negates the result.
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to compare to.
@@ -338,7 +340,7 @@ public:
     /**
      * @brief Logical shift left operator for vec4state.
      * 
-     * Converts other vector to a long long number, then shifts this vector to the left by the number of bit positions given by other vector. The vacated bit positions are filled with zeros.
+     * Extracts the value stored in other vector, then shifts this vector to the left by the number of bit positions given by other vector. The vacated bit positions are filled with zeros. If other vector holds a value that cannot be an index of a bit position in this vector, the result is a vector of 0's.
      * 
      * @param other The vector that holds the number of bit positions to shift by.
      * @return A new vector that holds the result of the logical shift left operation. If other vector holds unknown bits, then the result is only x's.
@@ -358,7 +360,7 @@ public:
     /**
      * @brief Logical shift right operator for vec4state.
      * 
-     * Converts other vector to a long long number, then shifts this vector to the right by the number of bit positions given by other vector. The vacated bit positions are filled with zeros.
+     * Converts other vector to a long long number, then shifts this vector to the right by the number of bit positions given by other vector. The vacated bit positions are filled with zeros. If other vector holds a value that cannot be an index of a bit position in this vector, the result is a vector of 0's.
      * 
      * @param other The vector that holds the number of bit positions to shift by.
      * @return A new vector that holds the result of the logical shift right operation. If other vector holds unknown bits, then the result is only x's.
@@ -375,25 +377,77 @@ public:
      */
     vec4state operator>>(const long long num);
 
+    /**
+     * @brief Get bit select operator for vec4state.
+     * 
+     * Extracts the bit stored in this vector at the given index by extracting the value stored in index and by using the getPartSelect method by setting the start and end indices to index.
+     * 
+     * @param index The index of the bit to extract.
+     * @return The value of the bit at index index in this vector. If the index holds unknown values or is out of range, the result is a vector of x's.
+     */
     vec4state getBitSelect(const vec4state& index) const;
 
+    /**
+     * @brief Get bit select operator for vec4state.
+     * 
+     * Creates a vec4state that holds the value of index, then extracts the bit stored in this vector at the given index. Uses the getPartSelect method by setting the start and end indices to index.
+     * 
+     * @tparam The type of index, must be an integral type or a string.
+     * @param index The index of the bit to extract.
+     * @return The value of the bit at index index in this vector. If the index holds unknown values or is out of range, the result is a vector of x's.
+     */
     template<typename T, typename enable_if<is_valid_type_for_vec4state<T>::value, bool>::type = true>
     vec4state getBitSelect(T index) const {
         return getBitSelect(vec4state(index));
     }
 
+    /**
+     * @brief Set bit select operator for vec4state.
+     * 
+     * Sets the bit stored in this vector at the given index to the value stored in newValue by extracting the value stored in index and by using the setPartSelect method by setting the start and end indices to index.
+     * 
+     * @param index The index of the bit to set.
+     * @param newValue The value to set the bit to. If the index holds unknown values or is out of range, this vector remains unchanged.
+     */
     void setBitSelect(const vec4state& index, const vec4state& newValue);
 
+    /**
+     * @brief Set bit select operator for vec4state.
+     * 
+     * Creates a vec4state that holds the value of index, then sets the bit stored in this vector at the given index to the value stored in newValue. This is done by extracting the value stored in index and by using the setPartSelect method by setting the start and end indices to index.
+     * 
+     * @tparam The type of index, must be an integral type or a string.
+     * @param index The index of the bit to set.
+     * @param newValue The value to set the bit to. If the index holds unknown values or is out of range, this vector remains unchanged.
+     */
     template<typename T, typename enable_if<is_valid_type_for_vec4state<T>::value, bool>::type = true>
     void setBitSelect(T index, const vec4state& newValue) {
         setBitSelect(vec4state(index), newValue);
     }
 
+    /**
+     * @brief Set bit select operator for vec4state.
+     * 
+     * Creates a vec4state that holds the value of newValue, then sets the bit stored in this vector at the given index to the value stored in newValue. This is done by extracting the value stored in index and by using the setPartSelect method by setting the start and end indices to index.
+     * 
+     * @tparam The type of newValue, must be an integral type or a string.
+     * @param index The index of the bit to set.
+     * @param newValue The value to set the bit to. If the index holds unknown values or is out of range, this vector remains unchanged.
+     */
     template<typename T, typename enable_if<is_valid_type_for_vec4state<T>::value, bool>::type = true>
     void setBitSelect(const vec4state& index, T newValue) {
         setBitSelect(index, vec4state(newValue));
     }
 
+    /**
+     * @brief Set bit select operator for vec4state.
+     * 
+     * Creates vec4states that hold the values of index and newValue, then sets the bit stored in this vector at the given index to the value stored in newValue. This is done by extracting the value stored in index and by using the setPartSelect method by setting the start and end indices to index.
+     * 
+     * @tparam The types of index and newValue, must be an integral type or a string.
+     * @param index The index of the bit to set.
+     * @param newValue The value to set the bit to. If the index holds unknown values or is out of range, this vector remains unchanged.
+     */
     template<typename T1, typename enable_if<is_valid_type_for_vec4state<T1>::value, bool>::type = true, typename T2, typename enable_if<is_valid_type_for_vec4state<T2>::value, bool>::type = true>
     void setBitSelect(T1 index, T2 newValue) {
         setBitSelect(vec4state(index), vec4state(newValue));
@@ -418,7 +472,7 @@ public:
      * @param other The vector to perform the logical AND operation with.
      * @return 1'b1 if both vectors are true.
      * @return 1'b0 if one of the vectors is false.
-     * @return 1'bx if one of the vectors is unknown and the other vector is true.
+     * @return 1'bx if one of the vectors is unknown and the other vector is true, or if both vectors are unknown.
      */
     vec4state operator&&(const vec4state& other) const;
 
@@ -431,7 +485,7 @@ public:
      * @param num The value to perform the logical AND operation with.
      * @return 1'b1 if both vectors are true.
      * @return 1'b0 if one of the vectors is false.
-     * @return 1'bx if one of the vectors is unknown and the other vector is true.
+     * @return 1'bx if one of the vectors is unknown and the other vector is true, or if both vectors are unknown.
      */
     template<typename T, typename enable_if<is_valid_type_for_vec4state<T>::value, bool>::type = true>
     vec4state operator&&(T num) const {
@@ -469,7 +523,7 @@ public:
     /**
      * @brief Logical NOT operator for vec4state.
      * 
-     * Checks if this vector is true (holds at least one 1 bit).
+     * Checks if this vector is true (holds at least one 1 bit). This is done by iterating over the vector's VPIs, and checking if at least one of the VPIs has a bit set to 1.
      * 
      * @return 1'b0 if the vector is true.
      * @return 1'b1 if the vector is false.
@@ -508,7 +562,7 @@ public:
     /**
      * @brief Greater than relational operator for vec4state.
      * 
-     * Checks if this vector is greater than other vector. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * Checks if this vector is greater than other vector. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. This is done by checking if the other vector is less than this vector.
      * 
      * @param other The vector to compare to.
      * @return 1'b1 if this vector is greater than other vector.
@@ -520,7 +574,7 @@ public:
     /**
      * @brief Greater than relational operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then checks if this vector is greater than num. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * Creates a vec4state that holds the value of num, then checks if this vector is greater than num. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. This is done by checking if num is less than this vector.
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to compare to.
@@ -536,7 +590,7 @@ public:
     /**
      * @brief Less than or equal to relational operator for vec4state.
      * 
-     * Checks if this vector is less than or equal to other vector. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * Checks if this vector is less than or equal to other vector. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. This is done by checking if this vector is greater than other vector, and then negating the result.
      * 
      * @param other The vector to compare to.
      * @return 1'b1 if this vector is less than or equal to other vector.
@@ -548,7 +602,7 @@ public:
     /**
      * @brief Less than or equal to relational operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then checks if this vector is less than or equal to num. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * Creates a vec4state that holds the value of num, then checks if this vector is less than or equal to num. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. This is done by checking if this vector is greater than num, and then negating the result.
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to compare to.
@@ -564,7 +618,7 @@ public:
     /**
      * @brief Greater than or equal to relational operator for vec4state.
      * 
-     * Checks if this vector is greater than or equal to other vector. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * Checks if this vector is greater than or equal to other vector. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. This is done by checking if this vector is less than other vector, and then negating the result.
      * 
      * @param other The vector to compare to.
      * @return 1'b1 if this vector is greater than or equal to other vector.
@@ -576,7 +630,7 @@ public:
     /**
      * @brief Greater than or equal to relational operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then checks if this vector is greater than or equal to num. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * Creates a vec4state that holds the value of num, then checks if this vector is greater than or equal to num. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. This is done by checking if this vector is less than num, and then negating the result.
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to compare to.
@@ -592,7 +646,7 @@ public:
     /**
      * @brief Addition operator for vec4state.
      * 
-     * Calculates the sum of this vector and other vector. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * Calculates the sum of this vector and other vector. The method iterates over the vectors' VPIs, and calculates the sum of the corresponding VPIs. If the sum is greater than 32 bits, the carry is set to 1 for the next iteration. If there is a carry in the last iteration, the size of the result vector is increased by 1.
      * 
      * @param other The vector to add.
      * @return A new vector that holds the result of the addition operation. If one of the vectors holds unknown bits, then the result is only x's.
@@ -602,7 +656,7 @@ public:
     /**
      * @brief Addition operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then calculates the sum of this vector and num. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * Creates a vec4state that holds the value of num, then calculates the sum of this vector and num. The method iterates over the vectors' VPIs, and calculates the sum of the corresponding VPIs. If the sum is greater than 32 bits, the carry is set to 1 for the next iteration. If there is a carry in the last iteration, the size of the result vector is increased by 1.
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to add.
@@ -616,7 +670,7 @@ public:
     /**
      * @brief Subtraction operator for vec4state.
      * 
-     * Calculates the difference between this vector and other vector. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * Calculates the difference between this vector and other vector. The method iterates over the vectors' VPIs, and calculates the difference of the corresponding VPIs. If the current VPI in this vector is less than the corresponding one in other vector, the method borrows from the next positive VPI of this vector. If there is no VPI to borrow from, the result is negative.
      * 
      * @param other The vector to subtract.
      * @return A new vector that holds the result of the subtraction operation. If one of the vectors holds unknown bits, then the result is only x's.
@@ -626,7 +680,7 @@ public:
     /**
      * @brief Subtraction operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then calculates the difference between this vector and num. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * Creates a vec4state that holds the value of num, then calculates the difference between this vector and num.  The method iterates over the vectors' VPIs, and calculates the difference of the corresponding VPIs. If the current VPI in this vector is less than the corresponding one in other vector, the method borrows from the next positive VPI of this vector. If there is no VPI to borrow from, the result is negative.
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to subtract.
@@ -640,7 +694,7 @@ public:
     /**
      * @brief Multiplication operator for vec4state.
      * 
-     * Calculates the product of this vector and other vector.
+     * Calculates the product of this vector and other vector. The method aligns the vectors to the same size, and then multiplies each VPI in this vector by each VPI in other vector and adds the result to the corresponding VPI in the result vector.
      * 
      * @param other The vector to multiply.
      * @return A new vector that holds the result of the multiplication operation. If one of the vectors holds unknown bits, then the result is only x's.
@@ -650,7 +704,7 @@ public:
     /**
      * @brief Multiplication operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then calculates the product of this vector and num.
+     * Creates a vec4state that holds the value of num, then calculates the product of this vector and num. The method aligns the vectors to the same size, and then multiplies each VPI in this vector by each VPI in other vector and adds the result to the corresponding VPI in the 
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to multiply.
@@ -664,7 +718,7 @@ public:
     /**
      * @brief Division operator for vec4state.
      * 
-     * Calculates the division of this vector by other vector. If other is 0, an exception is thrown.
+     * Calculates the division of this vector by other vector. If other is 0, vec4stateExceptionInvalidOperation is thrown.
      * 
      * @param other The vector to divide by.
      * @return A new vector that holds the result of the division operation. If one of the vectors holds unknown bits, then the result is only x's.
@@ -674,7 +728,7 @@ public:
     /**
      * @brief Division operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then calculates the division of this vector by num. If num is 0, an exception is thrown.
+     * Creates a vec4state that holds the value of num, then calculates the division of this vector by num. If num is 0, vec4stateExceptionInvalidOperation is thrown.
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to divide by.
@@ -688,7 +742,7 @@ public:
     /**
      * @brief Modulus operator for vec4state.
      * 
-     * Calculates the modulus of this vector by other vector. If other is 0, an exception is thrown.
+     * Calculates the modulus of this vector by other vector. If other is 0, vec4stateExceptionInvalidOperation is thrown.
      * 
      * @param other The vector to calculate the modulus by.
      * @return A new vector that holds the result of the modulus operation. If one of the vectors holds unknown bits, then the result is only x's.
@@ -698,7 +752,7 @@ public:
     /**
      * @brief Modulus operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then calculates the modulus of this vector by num. If num is 0, an exception is thrown.
+     * Creates a vec4state that holds the value of num, then calculates the modulus of this vector by num. If num is 0, vec4stateExceptionInvalidOperation is thrown.
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to calculate the modulus by.
@@ -712,7 +766,7 @@ public:
     /**
      * @brief Minus operator for vec4state.
      * 
-     * Calculates the negative value of this vector.
+     * Calculates the negative value of this vector. The method calculates the two's complement of this vector by inverting all the bits and adding 1.
      * 
      * @return A new vector that holds the result of the minus operation. If this vector holds unknown bits, then the result is only x's.
      */
@@ -721,7 +775,7 @@ public:
     /**
      * @brief Power operator for vec4state.
      * 
-     * Calculates the value of the vector to the power of other vector.
+     * Calculates the value of the vector to the power of other vector. The method calculates the power of the vector by multiplying the vector by itself other times.
      * 
      * @param other The vector to raise the value to the power of.
      * @return A new vector that holds the result of the power operation. If one of the vectors holds unknown bits, then the result is only x's.
@@ -731,7 +785,7 @@ public:
     /**
      * @brief Power operator for vec4state.
      * 
-     * Creates a vec4state that holds the value of num, then calculates the value of the vector to the power of num.
+     * Creates a vec4state that holds the value of num, then calculates the value of the vector to the power of num. The method calculates the power of the vector by multiplying the vector by itself other times.
      * 
      * @tparam The type of num, must be an integral type or a string.
      * @param num The value to raise the value to the power of.
@@ -745,7 +799,7 @@ public:
     /**
      * @brief Conversion operator to vec2state for vec4state.
      * 
-     * Converts this vector to a 2-state vector by replacing all the unknown values with 0's.
+     * Converts this vector to a 2-state vector by replacing all the unknown values with 0's. This is done by iterating over the vector's VPIs, setting the z bits to x bits (aval = 0, bval = 1), and then setting the x bits to 0 bits.
      */
     void convertTo2State();
     
@@ -781,7 +835,7 @@ public:
     /**
      * @brief String representation of the vector.
      * 
-     * Creates a string representation of the vecor, where each bit is represented by it's corresponding BitValue (0, 1, x, or z).
+     * Creates a string representation of the vecor, where each bit is represented by it's corresponding BitValue (0, 1, x, or z). This is done by iterating over the vector's VPIs from MSB to LSB, and for each VPI, iterating over the bits in it and adding the corresponding BitValue to the result string.
      * 
      * @return A string representation of the vector.
      */

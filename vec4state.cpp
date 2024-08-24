@@ -1,3 +1,13 @@
+/**
+ * @file vec4state.cpp
+ * @brief Implementation of the vec4state class.
+ * 
+ * This file contains the implementation of the vec4state class, which is a versatile C++ library that enables efficient representation and arithmetic operations on 4-value bit vectors, emulating the functionalities commonly found in hardware description languages like SystemVerilog.
+ * 
+ * @author Mia Ekheizer, Yuval Shasha
+ * @date 2024-08-24
+ */
+
 #include "vec4state.h"
 
 #define BITS_IN_VPI 32
@@ -368,7 +378,14 @@ vec4state& vec4state::operator=(const vec4state& other) {
     return *this;
 }
 
-// TODO: continue documenting from here
+/**
+ * @brief Bitwise AND operator for vec4state.
+ * 
+ * Calculates the bitwise AND of a bit in this vector with the corresponding bit in the other vector, resulting in one bit for each bit of the vectors. If at least one of the bits is 0, the result bit is 0. If both bits are 1, the result bit is 1. If at least one of the bits is unknown, the result bit is x. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. The method calculates the bitwise NOT of each vector, then calculates the bitwise OR of the NOT vectors, and finally calculates the bitwise NOT of the result vector.
+ * 
+ * @param other The vector to perform the bitwise AND operation with.
+ * @return A new vector that holds the result of the bitwise AND operation.
+ */
 vec4state vec4state::operator&(const vec4state& other) const {
     vec4state result = vec4state(ZERO, max(numBits, other.numBits));
     // If the vectors have different number of bits, change the size of the smaller vector to the size of the larger vector by padding it with 0's.
@@ -386,6 +403,15 @@ vec4state vec4state::operator&(const vec4state& other) const {
     return move(result);
 }
 
+/**
+ * @brief Bitwise OR operator for vec4state.
+ * 
+ * Calculates the bitwise OR of a bit in this vector with the corresponding bit in the other vector, resulting in one bit for each bit of the vectors. If at least one of the bits is 1, the result bit is 1.
+ * If both bits are 0, the result bit is 0. If at least one of the bits is unknown, the result bit is x. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+ * 
+ * @param other The vector to perform the bitwise OR operation with.
+ * @return A new vector that holds the result of the bitwise OR operation.
+ */
 vec4state vec4state::operator|(const vec4state& other) const {
     vec4state copyThis = *this;
     vec4state copyOther = other;
@@ -395,22 +421,40 @@ vec4state vec4state::operator|(const vec4state& other) const {
     copyThis.setNumBits(maxNumBits);
     copyOther.setNumBits(maxNumBits);
     for (long long i = 0; i < maxVectorSize; i++) {
-        VPI currThisVPI = copyThis.vector[i];
-        VPI currOtherVPI = copyOther.vector[i];
-        copyThis.vector[i].setAval(currThisVPI.getAval() - (currThisVPI.getAval() & currThisVPI.getBval()));
-        copyOther.vector[i].setAval(currOtherVPI.getAval() - (currOtherVPI.getAval() & currOtherVPI.getBval()));
+        // If the vectors hold z's, change the z's to x's.
+        if (i <= vectorSize - 1) {
+            VPI currThisVPI = copyThis.vector[i];
+            copyThis.vector[i].setAval(currThisVPI.getAval() - (currThisVPI.getAval() & currThisVPI.getBval()));
+        }
+        if (i <= other.vectorSize - 1) {
+            VPI currOtherVPI = copyOther.vector[i];
+            copyOther.vector[i].setAval(currOtherVPI.getAval() - (currOtherVPI.getAval() & currOtherVPI.getBval()));
+        }
     }
     for (long long i = 0; i < maxVectorSize; i++) {
-        VPI currThisVPI = copyThis.vector[i];
-        VPI currOtherVPI = copyOther.vector[i];
-        copyThis.vector[i].setBval(currThisVPI.getBval() - (currOtherVPI.getAval() & currThisVPI.getBval()));
-        copyOther.vector[i].setBval(currOtherVPI.getBval() - (currThisVPI.getAval() & currOtherVPI.getBval()));
+        // If one of the vectors holds 1 in the same indices as the other vector holds x, remove the x.
+        if (i <= vectorSize - 1 && i <= other.vectorSize - 1) {
+            VPI currThisVPI = copyThis.vector[i];
+            VPI currOtherVPI = copyOther.vector[i];
+            copyThis.vector[i].setBval(currThisVPI.getBval() - (currOtherVPI.getAval() & currThisVPI.getBval()));
+            copyOther.vector[i].setBval(currOtherVPI.getBval() - (currThisVPI.getAval() & currOtherVPI.getBval()));
+        } else {
+            break;
+        }
     }
     for (long long i = 0; i < maxVectorSize; i++) {
-        VPI currThisVPI = copyThis.vector[i];
-        VPI currOtherVPI = copyOther.vector[i];
-        result.vector[i].setAval(currThisVPI.getAval() | currOtherVPI.getAval());
-        result.vector[i].setBval(currThisVPI.getBval() | currOtherVPI.getBval());
+        // Calculate the bitwise OR of the vectors by bitwise OR of the aval and bval of each VPI.
+        if (i <= vectorSize - 1 && i <= other.vectorSize - 1) {
+            VPI currThisVPI = copyThis.vector[i];
+            VPI currOtherVPI = copyOther.vector[i];
+            result.vector[i].setAval(currThisVPI.getAval() | currOtherVPI.getAval());
+            result.vector[i].setBval(currThisVPI.getBval() | currOtherVPI.getBval());
+        } else if (i <= vectorSize - 1) {
+            result.vector[i] = copyThis.vector[i];
+        } else {
+            result.vector[i] = copyOther.vector[i];
+        }
+        // If the result vector holds unknown bits, update unkonwn field.
         if (result.vector[i].getBval() != 0) {
             result.unknown = true;
         }
@@ -418,6 +462,14 @@ vec4state vec4state::operator|(const vec4state& other) const {
     return move(result);
 }
 
+/**
+ * @brief Bitwise XOR operator for vec4state.
+ * 
+ * Calculates the bitwise XOR of a bit in this vector with the corresponding bit in the other vector, resulting in one bit for each bit of the vectors. If at least one of the bits is unknown, the result bit is x. If both bits are equal, the result bit is 0. If the two bits are not equal, the result bit is 1. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. The method calculates the bitwise AND between each vector and the bitwise NOT of the other vector, then calculates the bitwise OR of the two results.
+ * 
+ * @param other The vector to perform the bitwise XOR operation with.
+ * @return A new vector that holds the result of the bitwise XOR operation.
+ */
 vec4state vec4state::operator^(const vec4state& other) const {
     vec4state result = vec4state(ZERO, max(numBits, other.numBits));
     // If the vectors have different number of bits, change the size of the smaller vector to the size of the larger vector by padding it with 0's.
@@ -435,26 +487,47 @@ vec4state vec4state::operator^(const vec4state& other) const {
     return move(result);
 }
 
-// Helper function for zeroing down the bits that are out of range while the vector stays the same size.
+/**
+ * @brief Helper function for zeroing down the bits that are out of range.
+ * 
+ * Zeroes down the bits that are out of range while vector stays the same size. The function iterates over vector's VPIs starting from the last relevant cell up to vectorSize, and zeroes down the bits that are out of numBits range.
+ * 
+ * @param vector The vector to zero down the bits in.
+ * @param vectorSize The size of the vector.
+ * @param numBits The number of bits in the vector that are in range.
+ */
 void zeroDownOutOfRangeBits(shared_ptr<VPI[]> vector, long long vectorSize, long long numBits) {
+    // Find the index of the last relevant VPI.
     long long indexLastCell = calcVectorSize(numBits) - 1;
+    // Find the offset of the last relevant bit in the last relevant VPI.
     long long offset = numBits % BITS_IN_VPI;
     long long mask = (long long)(pow(2, offset) - 1);
+    // Zero down the bits that are out of range.
     for (long long i = indexLastCell; i < vectorSize; i++) {
+        // If the current cell is the last relevant cell.
         if (i == indexLastCell) {
+            // If the last relevant cell needs to be truncated in the middle.
             if (offset) {
                 VPI currVPI = vector[i];
-                // If the last relevant cell needs to be truncated in the middle.
                 vector[i].setAval(currVPI.getAval() & mask);
                 vector[i].setBval(currVPI.getBval() & mask);
             }
-        } else {
+        }
+        // If all of the bits in the current cell are out of range.
+        else {
             vector[i].setAval(0);
             vector[i].setBval(0);
         }
     }
 }
 
+/**
+ * @brief Bitwise NOT operator for vec4state.
+ * 
+ * Calculates the bitwise NOT of each bit in the vector, resulting in one bit for each bit of the vector. If the bit is 0, the result bit is 1. If the bit is 1, the result bit is 0. If the bit is unknown, the result bit is x. The method iterates over the vector's VPIs, and sets each bit in the aval to 1 only if the corresponding bit in the original vector is 0 (in any other case, the bit is set to 0, which means it can be either 0 or x). The bval stays the same (which means every known bit stays known and every unknown bit can be only x). Then the method zeroes down the bits that are out of range (because they have been set to 1 in the bitwise NOT).
+ * 
+ * @return A new vector that holds the result of the bitwise NOT operation.
+ */
 vec4state vec4state::operator~() const {
     vec4state result = *this;
     for (int i = 0; i < vectorSize; i++) {
@@ -465,13 +538,25 @@ vec4state vec4state::operator~() const {
     return move(result);
 }
 
+/**
+ * @brief Logical equality operator for vec4state.
+ * 
+ * Compares this vector to other vector bit for bit. This is done by calculating the bitwise XOR of the two vectors, and then checking if the result vector is zero. If the result vector holds at least one 1 bit, the vectors are not equal. If the result vector has unknown bits, the comparison is ambiguous and the method returns x. In any other case, if the result vector is only 0's, the vectors are equal. 
+ * 
+ * @param other The vector to compare to.
+ * @return 1'b0 if the comparison fails.
+ * @return 1'b1 if the comparison succeeds.
+ * @return 1'bx if the comparison is ambiguous (due to unknown bits in one of the vectors).
+ */
 vec4state vec4state::operator==(const vec4state& other) const {
     vec4state xorVector = *this ^ other;
+    // Checks if the result vector has 1 bits, which means the vectors are not equal.
     for (long long i = 0; i < xorVector.vectorSize; i++) {
         if (xorVector.vector[i].getAval() != 0) {
             return vec4state(ZERO, 1);
         }
     }
+    // Checks if the result vector has unknown bits, which means the comparison is ambiguous.
     for (long long i = 0; i < xorVector.vectorSize; i++) {
         if (xorVector.vector[i].getBval() != 0) {
             return vec4state(X, 1);
@@ -480,11 +565,31 @@ vec4state vec4state::operator==(const vec4state& other) const {
     return vec4state(ONE, 1);
 }
 
+/**
+ * @brief Logical inequality operator for vec4state.
+ * 
+ * Compares this vector to other vector bit for bit. This is done by checking if the vectors are equal using the logical equality operator, and then negating the result.
+ * 
+ * @param other The vector to compare to.
+ * @return 1'b1 if the comparison fails.
+ * @return 1'b0 if the comparison succeeds.
+ * @return 1'bx if the comparison is ambiguous (due to unknown bits in one of the vectors).
+ */
 vec4state vec4state::operator!=(const vec4state& other) const {
     return !(*this == other);
 }
 
+/**
+ * @brief Case equality operator for vec4state.
+ * 
+ * Compares this vector to other vector bit for bit, where the unknown bits are included in the comparison and shall match for the result to be considered equal. If the vectors are of different lengths, the shorter vector is zero-extended to the size of the longer vector. The method iterates over the vectors' VPIs, and checks if the aval and bval of each VPI are equal. If at least one of the VPIs is not equal, the vectors are not equal. If all of the VPIs are equal, the vectors are equal.
+ * 
+ * @param other The vector to compare to.
+ * @return 1'b0 if the comparison fails.
+ * @return 1'b1 if the comparison succeeds.
+ */
 vec4state vec4state::caseEquality(const vec4state& other) const {
+    // If the vectors have different number of bits, change the size of the smaller vector to the size of the larger vector by padding it with 0's.
     if (numBits < other.numBits) {
         vec4state copyThis = *this;
         copyThis.setNumBits(other.numBits);
@@ -493,7 +598,9 @@ vec4state vec4state::caseEquality(const vec4state& other) const {
         vec4state copyOther = other;
         copyOther.setNumBits(numBits);
         return this->caseEquality(copyOther);
-    } else {
+    }
+    // Iterate over the vectors' VPIs and check if the aval and bval of each VPI are equal.
+    else {
         for (int i = 0; i < vectorSize; i++) {
         VPI currThisVPI = vector[i];
         VPI currOtherVPI = other.vector[i];
@@ -505,10 +612,27 @@ vec4state vec4state::caseEquality(const vec4state& other) const {
     }
 }
 
+/**
+ * @brief Case inequality operator for vec4state.
+ * 
+ * Compares this vector to other vector bit for bit, where the unknown bits are included in the comparison and shall not match for the result to be considered unequal. If the vectors are of different lengths, the shorter vector is zero-extended to the size of the longer vector. The method calculates the case equality of the vectors and then negates the result.
+ * 
+ * @param other The vector to compare to.
+ * @return 1'b1 if the comparison fails.
+ * @return 1'b0 if the comparison succeeds.
+ */
 vec4state vec4state::caseInequality(const vec4state& other) const {
     return !caseEquality(other);
 }
 
+/**
+ * @brief Logical shift left operator for vec4state.
+ * 
+ * Extracts the value stored in other vector, then shifts this vector to the left by the number of bit positions given by other vector. The vacated bit positions are filled with zeros. If other vector holds a value that cannot be an index of a bit position in this vector, the result is a vector of 0's.
+ * 
+ * @param other The vector that holds the number of bit positions to shift by.
+ * @return A new vector that holds the result of the logical shift left operation. If other vector holds unknown bits, then the result is only x's.
+ */
 vec4state vec4state::operator<<(const vec4state& other) {
     long long numOfThis;
     try {
@@ -522,13 +646,24 @@ vec4state vec4state::operator<<(const vec4state& other) {
     return move(result);
 }
 
+/**
+ * @brief Logical shift left operator for vec4state.
+ * 
+ * Shifts this vector to the left by the number of bit positions given by num. The vacated bit positions are filled with zeros.
+ * 
+ * @param num The number of bit positions to shift by.
+ * @return A new vector that holds the result of the logical shift left operation.
+ */
 vec4state vec4state::operator<<(const long long num) {
+    // If the number of bit positions to shift by is 0, the result is the same vector.
     if (num == 0) {
         return *this;
     }
+    // If the number of bit positions to shift by is negative, the result is a vector of 0's.
     if (num < 0) {
         return vec4state(ZERO, numBits);
     }
+    // If the number of bit positions to shift by is greater than the number of bits in the vector, the result is a vector of 0's.
     if (num >= numBits) {
         return vec4state(ZERO, numBits);
     }
@@ -536,6 +671,8 @@ vec4state vec4state::operator<<(const long long num) {
     long long offset = num / BITS_IN_VPI;
     // Shifting whole cells
     if (offset > 0) {
+        // If the number of bit positions to shift by is greater than the number of bits in a VPI, shift the whole cells.
+        // The cells are shifted to the left by num/BITS_IN_VPI cells.
         for (long long i = vectorSize - offset - 1; i >= 0; i--) {
             VPI currThisVPI = vector[i];
             (res.vector[i + offset]).setAval(currThisVPI.getAval());
@@ -549,23 +686,34 @@ vec4state vec4state::operator<<(const long long num) {
     }
     // Shifting the remaining bits
     for (long long i = vectorSize - 1; i >= 0; i--) {
+        // If the number of bit positions to shift by is not a multiple of the number of bits in a VPI, shift the remaining bits.
+        // The bits are shifted to the left by num%BITS_IN_VPI bits.
+        // The bits that are shifted out of the VPI are stored in the next VPI. 
         VPI currVPI = res.vector[i];
         res.vector[i].setAval(currVPI.getAval() << (num % BITS_IN_VPI));
         res.vector[i].setBval(currVPI.getBval() << (num % BITS_IN_VPI));
         currVPI = res.vector[i];
         if (i > 0) {
+            // If the current VPI is not the first VPI, store the bits that are shifted out of the previous VPI in the current VPI.
             VPI prevVPI = res.vector[i - 1];
             res.vector[i].setAval(currVPI.getAval() | (prevVPI.getAval() >> (BITS_IN_VPI - (num % BITS_IN_VPI))));
             res.vector[i].setBval(currVPI.getBval() | (prevVPI.getBval() >> (BITS_IN_VPI - (num % BITS_IN_VPI))));
         }
-        currVPI = res.vector[i];
-        if (currVPI.getBval() != 0) {
+        if (res.vector[i].getBval() != 0) {
             res.unknown = true;
         }
     }
     return move(res);
 }
 
+/**
+ * @brief Logical shift right operator for vec4state.
+ * 
+ * Converts other vector to a long long number, then shifts this vector to the right by the number of bit positions given by other vector. The vacated bit positions are filled with zeros. If other vector holds a value that cannot be an index of a bit position in this vector, the result is a vector of 0's.
+ * 
+ * @param other The vector that holds the number of bit positions to shift by.
+ * @return A new vector that holds the result of the logical shift right operation. If other vector holds unknown bits, then the result is only x's.
+ */
 vec4state vec4state::operator>>(const vec4state& other) {
     long long numOfThis;
     try {
@@ -579,13 +727,24 @@ vec4state vec4state::operator>>(const vec4state& other) {
     return move(result);
 }
 
+/**
+ * @brief Logical shift left operator for vec4state.
+ * 
+ * Shifts this vector to the right by the number of bit positions given by num. The vacated bit positions are filled with zeros.
+ * 
+ * @param num The number of bit positions to shift by.
+ * @return A new vector that holds the result of the logical shift right operation.
+ */
 vec4state vec4state::operator>>(const long long num) {
+    // If the number of bit positions to shift by is 0, the result is the same vector.
     if (num == 0) {
         return *this;
     }
+    // If the number of bit positions to shift by is negative, the result is a vector of 0's with the same number of bits as this vector.
     if (num < 0) {
         return vec4state(ZERO, numBits);
     }
+    // If the number of bit positions to shift by is greater than the number of bits in the vector, the result is a vector of 0's with the same number of bits as this vector.
     if (num >= numBits) {
         return vec4state(ZERO, numBits);
     }
@@ -593,7 +752,9 @@ vec4state vec4state::operator>>(const long long num) {
     long long offset = num / BITS_IN_VPI;
     // Shifting whole cells
     if (offset > 0) {
+        // If the number of bit positions to shift by is greater than the number of bits in a VPI, shift the whole cells.
         for (long long i = offset; i < vectorSize; i++) {
+            // The cells are shifted to the right by num/BITS_IN_VPI cells.
             VPI currThisVPI = vector[i];
             res.vector[i - offset].setAval(currThisVPI.getAval());
             res.vector[i - offset].setBval(currThisVPI.getBval());
@@ -606,23 +767,34 @@ vec4state vec4state::operator>>(const long long num) {
     }
     // Shifting the remaining bits
     for (int i = 0; i < vectorSize; i++) {
+        // If the number of bit positions to shift by is not a multiple of the number of bits in a VPI, shift the remaining bits.
+        // The bits are shifted to the right by num%BITS_IN_VPI bits.
+        // The bits that are shifted out of the VPI are stored in the previous VPI.
         VPI currVPI = res.vector[i];
         res.vector[i].setAval(currVPI.getAval() >> (num % BITS_IN_VPI));
         res.vector[i].setBval(currVPI.getBval() >> (num % BITS_IN_VPI));
         currVPI = res.vector[i];
         if (i < vectorSize - 1) {
+            // If the current VPI is not the last VPI, store the bits that are shifted out of the next VPI in the current VPI.
             VPI nextVPI = res.vector[i + 1];
             res.vector[i].setAval(currVPI.getAval() | (nextVPI.getAval() << (BITS_IN_VPI - (num % BITS_IN_VPI))));
             res.vector[i].setBval(currVPI.getBval() | (nextVPI.getBval() << (BITS_IN_VPI - (num % BITS_IN_VPI))));
         }
-        currVPI = res.vector[i];
-        if (currVPI.getBval() != 0) {
+        if (res.vector[i].getBval() != 0) {
             res.unknown = true;
         }
     }
     return move(res);
 }
 
+/**
+ * @brief Get bit select operator for vec4state.
+ * 
+ * Extracts the bit stored in this vector at the given index by extracting the value stored in index and by using the getPartSelect method by setting the start and end indices to index.
+ * 
+ * @param index The index of the bit to extract.
+ * @return The value of the bit at index index in this vector. If the index holds unknown values or is out of range, the result is a vector of x's.
+ */
 vec4state vec4state::getBitSelect(const vec4state& index) const {
     long long bitIndex;
     try {
@@ -641,19 +813,27 @@ vec4state vec4state::getBitSelect(const vec4state& index) const {
     return getPartSelect(bitIndex, bitIndex);
 }
 
+/**
+ * @brief Set bit select operator for vec4state.
+ * 
+ * Sets the bit stored in this vector at the given index to the value stored in newValue by extracting the value stored in index and by using the setPartSelect method by setting the start and end indices to index.
+ * 
+ * @param index The index of the bit to set.
+ * @param newValue The value to set the bit to. If the index holds unknown values or is out of range, this vector remains unchanged.
+ */
 void vec4state::setBitSelect(const vec4state& index, const vec4state& newValue) {
     long long bitIndex;
     try {
         bitIndex = index.extractNumberFromVector();
     } catch (vec4stateExceptionUnknownVector&) {
-        // If the index is unknown, the result is unknown.
+        // If the index is unknown, do nothing.
         return;
     } catch (vec4stateExceptionInvalidSize&) {
-        // If the index is out of range, the result is unknown.
+        // If the index is out of range, do nothing.
         return;
     }
     if (bitIndex > numBits) {
-        // If the index is out of range, the result is unknown.
+        // If the index is out of range, do nothing.
         return;
     }
     setPartSelect(bitIndex, bitIndex, newValue);
@@ -721,7 +901,6 @@ vec4state vec4state::getPartSelect(long long end, long long start) const {
     return move(result);
 }
 
-// TODO: figure out why we fail tests.
 void vec4state::setPartSelect(long long end, long long start, vec4state other) {
     // If input is invalid.
     if (end < start) {
@@ -802,6 +981,16 @@ void vec4state::setPartSelect(long long end, long long start, vec4state other) {
     }
 }
 
+/**
+ * @brief Logical AND operator for vec4state.
+ * 
+ * Checks if both this vector and other vector are true (hold at least one 1 bit).
+ * 
+ * @param other The vector to perform the logical AND operation with.
+ * @return 1'b1 if both vectors are true.
+ * @return 1'b0 if one of the vectors is false.
+ * @return 1'bx if one of the vectors is unknown and the other vector is true, or if both vectors are unknown.
+ */
 vec4state vec4state::operator&&(const vec4state& other) const {
     // If both vectors have at least one bit set to 1, return 1.
     if (bool(*this) && bool(other)) {
@@ -817,6 +1006,16 @@ vec4state vec4state::operator&&(const vec4state& other) const {
     }
 }
 
+/**
+ * @brief Logical OR operator for vec4state.
+ * 
+ * Checks if at least one of this vector and other vector is true (holds at least one 1 bit).
+ * 
+ * @param other The vector to perform the logical OR operation with.
+ * @return 1'b1 if one of the vectors is true.
+ * @return 1'b0 if both vectors are false.
+ * @return 1'bx if one of the vectors is unknown and the other vector is false.
+ */
 vec4state vec4state::operator||(const vec4state& other) const {
     // If at least one of the vectors have at least one bit set to 1, return 1.
     if (bool(*this) || bool(other)) {
@@ -832,12 +1031,21 @@ vec4state vec4state::operator||(const vec4state& other) const {
     }
 }
 
+/**
+ * @brief Logical NOT operator for vec4state.
+ * 
+ * Checks if this vector is true (holds at least one 1 bit). This is done by iterating over the vector's VPIs, and checking if at least one of the VPIs has a bit set to 1.
+ * 
+ * @return 1'b0 if the vector is true.
+ * @return 1'b1 if the vector is false.
+ * @return 1'bx if the vector has an ambiguous truth value.
+ */
 vec4state vec4state::operator!() const {
     // If the vector has at least one bit set to 1, return 0.
     for (int i = 0; i < vectorSize; i++) {
         VPI currVPI = vector[i];
         // Extract the 1 bits.
-        uint32_t oneBits = currVPI.getOneBits();
+        uint32_t oneBits = currVPI.getKnownBits();
         if (oneBits != 0) {
             return vec4state(ZERO, 1);
         }
@@ -850,16 +1058,30 @@ vec4state vec4state::operator!() const {
     return vec4state(ONE, 1);
 }
 
+/**
+ * @brief Less than relational operator for vec4state.
+ * 
+ * Checks if this vector is less than other vector. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. If one of the vectors has unknown bits, the result is unknown.
+ * 
+ * @param other The vector to compare to.
+ * @return 1'b1 if this vector is less than other vector.
+ * @return 1'b0 if this vector is greater than or equal to other vector.
+ * @return 1'bx if the comparison is ambiguous (due to unknown bits in one of the vectors).
+ */
 vec4state vec4state::operator<(const vec4state& other) const {
+    // If one of the vectors has unknown bits, the result is unknown.
     if (unknown || other.unknown) {
         return vec4state(X, 1);
     }
+    // If the vectors are of unequal bit lengths:
+    // If this vector is longer than other vector and has at least one bit set to 1 in the extra bits, return 0 (false).
     if (vectorSize > other.vectorSize) {
         for (long long i = vectorSize - 1; i >= other.vectorSize; i--) {
             if (vector[i].getAval() != 0) {
                 return vec4state(ZERO, 1);
             }
         }
+    // If this vector is shorter than other vector and other vector has at least one bit set to 1 in the extra bits, return 1 (true).
     } else if (vectorSize < other.vectorSize) {
         for (long long i = other.vectorSize - 1; i >= vectorSize; i--) {
             if (other.vector[i].getAval() != 0) {
@@ -867,9 +1089,11 @@ vec4state vec4state::operator<(const vec4state& other) const {
             }
         }
     }
+    // Iterate over the vectors' VPIs and check if this vector is less than other vector.
     for (long long i = min(vectorSize, other.vectorSize) - 1; i >= 0; i--) {
         VPI currThisVPI = vector[i];
         VPI currOtherVPI = other.vector[i];
+        // If current VPI of this vector is less than current VPI of other vector, return 1 (true).
         if (currThisVPI.getAval() < currOtherVPI.getAval()) {
             return vec4state(ONE, 1);
         }
@@ -877,22 +1101,60 @@ vec4state vec4state::operator<(const vec4state& other) const {
             return vec4state(ZERO, 1);
         }
     }
-    // If the vectors are equal
+    // If the vectors are equal return 0 (false).
     return vec4state(ZERO, 1);
 }
 
+/**
+ * @brief Greater than relational operator for vec4state.
+ * 
+ * Checks if this vector is greater than other vector. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. This is done by checking if the other vector is less than this vector.
+ * 
+ * @param other The vector to compare to.
+ * @return 1'b1 if this vector is greater than other vector.
+ * @return 1'b0 if this vector is less than or equal to other vector.
+ * @return 1'bx if the comparison is ambiguous (due to unknown bits in one of the vectors).
+ */
 vec4state vec4state::operator>(const vec4state& other) const {
     return other < *this;
 }
 
+/**
+ * @brief Less than or equal to relational operator for vec4state.
+ * 
+ * Checks if this vector is less than or equal to other vector. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. This is done by checking if this vector is greater than other vector, and then negating the result.
+ * 
+ * @param other The vector to compare to.
+ * @return 1'b1 if this vector is less than or equal to other vector.
+ * @return 1'b0 if this vector is greater than other vector.
+ * @return 1'bx if the comparison is ambiguous (due to unknown bits in one of the vectors).
+ */
 vec4state vec4state::operator<=(const vec4state& other) const {
     return !(*this > other);
 }
 
+/**
+ * @brief Greater than or equal to relational operator for vec4state.
+ * 
+ * Checks if this vector is greater than or equal to other vector. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. This is done by checking if this vector is less than other vector, and then negating the result.
+ * 
+ * @param other The vector to compare to.
+ * @return 1'b1 if this vector is greater than or equal to other vector.
+ * @return 1'b0 if this vector is less than other vector.
+ * @return 1'bx if the comparison is ambiguous (due to unknown bits in one of the vectors).
+ */
 vec4state vec4state::operator>=(const vec4state& other) const {
     return !(*this < other);
 }
 
+/**
+ * @brief Addition operator for vec4state.
+ * 
+ * Calculates the sum of this vector and other vector. The method iterates over the vectors' VPIs, and calculates the sum of the corresponding VPIs. If the sum is greater than 32 bits, the carry is set to 1 for the next iteration. If there is a carry in the last iteration, the size of the result vector is increased by 1.
+ * 
+ * @param other The vector to add.
+ * @return A new vector that holds the result of the addition operation. If one of the vectors holds unknown bits, then the result is only x's.
+ */
 vec4state vec4state::operator+(const vec4state& other) const {
     long long maxNumBits = max(numBits, other.numBits);
     if (unknown || other.unknown) {
@@ -901,15 +1163,18 @@ vec4state vec4state::operator+(const vec4state& other) const {
     vec4state result = vec4state(ZERO, maxNumBits);
     long long carry = 0;
     long long sum = 0;
+    // Iterate over the vectors' VPIs and calculate the sum of the corresponding VPIs.
     for (long long i = 0; i < result.vectorSize; i++) {
         VPI currThisVPI = this->vector[i];
         VPI currOtherVPI = other.vector[i];
+        // If the current VPI is out of range of one of the vectors, copy it as is with the carry.
         if (i >= this->vectorSize) {
             sum = unsigned long long(currOtherVPI.getAval()) + carry;
         }
         else if (i >= other.vectorSize) {
             sum = unsigned long long(currThisVPI.getAval()) + carry;
         }
+        // If the current VPI is not out of range of the vectors, calculate the sum with the carry.
         else {
             sum = unsigned long long(currThisVPI.getAval()) + unsigned long long(currOtherVPI.getAval()) + carry;
         }
@@ -930,6 +1195,14 @@ vec4state vec4state::operator+(const vec4state& other) const {
     return move(result);
 }
 
+/**
+ * @brief Subtraction operator for vec4state.
+ * 
+ * Calculates the difference between this vector and other vector. The method iterates over the vectors' VPIs, and calculates the difference of the corresponding VPIs. If the current VPI in this vector is less than the corresponding one in other vector, the method borrows from the next positive VPI of this vector. If there is no VPI to borrow from, the result is negative.
+ * 
+ * @param other The vector to subtract.
+ * @return A new vector that holds the result of the subtraction operation. If one of the vectors holds unknown bits, then the result is only x's.
+ */
 vec4state vec4state::operator-(const vec4state& other) const {
     long long maxNumBits = max(numBits, other.numBits);
     if (unknown || other.unknown) {
@@ -981,6 +1254,14 @@ vec4state vec4state::operator-(const vec4state& other) const {
     return move(result);
 }
 
+/**
+ * @brief Multiplication operator for vec4state.
+ * 
+ * Calculates the product of this vector and other vector. The method aligns the vectors to the same size, and then multiplies each VPI in this vector by each VPI in other vector and adds the result to the corresponding VPI in the result vector.
+ * 
+ * @param other The vector to multiply.
+ * @return A new vector that holds the result of the multiplication operation. If one of the vectors holds unknown bits, then the result is only x's.
+ */
 vec4state vec4state::operator*(const vec4state& other) const {
     long long maxNumBits = max(numBits, other.numBits);
     if (unknown || other.unknown) {
@@ -1016,14 +1297,26 @@ vec4state vec4state::operator*(const vec4state& other) const {
     return move(result);
 }
 
+/**
+ * @brief Division operator for vec4state.
+ * 
+ * Calculates the division of this vector by other vector. If other is 0, vec4stateExceptionInvalidOperation is thrown.
+ * 
+ * @param other The vector to divide by.
+ * @return A new vector that holds the result of the division operation. If one of the vectors holds unknown bits, then the result is only x's.
+ */
 vec4state vec4state::operator/(const vec4state& other) const {
+    // If other is 0, throw an exception.
     if (!other) {
         throw vec4stateExceptionInvalidOperation("Division by zero is not allowed");
     }
+    // Hold the maximal number of bits between the two vectors.
     long long maxNumBits = max(numBits, other.numBits);
+    // If one of the vectors holds unknown bits, the result is unknown.
     if (unknown || other.unknown) {
         return vec4state(X, maxNumBits);
     }
+    // Initialize the result vector.
     vec4state result = vec4state(ZERO, maxNumBits);
     // Align the vectors to the same size.
     vec4state copyThis = *this;
@@ -1031,22 +1324,38 @@ vec4state vec4state::operator/(const vec4state& other) const {
     copyThis.setNumBits(maxNumBits);
     copyOther.setNumBits(maxNumBits);
     // Divide the vectors using bit manipulation.
+    // While copyThis (dividend) is greater than or equal to copyOther(divisor), continue dividing.
     while (copyThis >= copyOther) {
         long long shift = 0;
+        // Find the maximal shift that is less than or equal to the division result.
         while (copyThis > (copyOther << (shift + 1))) {
             shift++;
         }
+        // Subtract the divisor multiplied by 2^shift (2^shift = 1 << shift) from this.
         copyThis = copyThis - (copyOther << shift);
+        // Add 2^shift to the result.
         result = result + (vec4state(1) << shift);
+        // Continue the process until copyThis is less than copyOther, meaning can't get an integer result from the division.
     }
     return move(result);
 }
 
+/**
+ * @brief Modulus operator for vec4state.
+ * 
+ * Calculates the modulus of this vector by other vector. If other is 0, vec4stateExceptionInvalidOperation is thrown.
+ * 
+ * @param other The vector to calculate the modulus by.
+ * @return A new vector that holds the result of the modulus operation. If one of the vectors holds unknown bits, then the result is only x's.
+ */
 vec4state vec4state::operator%(const vec4state& other) const {
+    // If other is 0, throw an exception.
     if (!other) {
         throw vec4stateExceptionInvalidOperation("Division by zero is not allowed");
     }
+    // Hold the maximal number of bits between the two vectors.
     long long maxNumBits = max(numBits, other.numBits);
+    // If one of the vectors holds unknown bits, the result is unknown.
     if (unknown || other.unknown) {
         return vec4state(X, maxNumBits);
     }
@@ -1056,16 +1365,30 @@ vec4state vec4state::operator%(const vec4state& other) const {
     copyThis.setNumBits(maxNumBits);
     copyOther.setNumBits(maxNumBits);
     // Divide the vectors using bit manipulation and extract the remainder.
+    // Using the same method as the division operator, but instead of adding 2^shift to the result, subtract the divisor multiplied by 2^shift from this.
+    // Meaning, subtract the result of the division multiplied by the divisor from this. The result is the remainder.
+    // While copyThis (dividend) is greater than or equal to copyOther(divisor), continue dividing.
     while (copyThis >= copyOther) {
+        // Find the maximal shift that is less than or equal to the division result.
         long long shift = 0;
         while (copyThis > (copyOther << (shift + 1))) {
             shift++;
         }
+        // Subtract the divisor multiplied by 2^shift (2^shift = 1 << shift) from this.
+        // The result is the remainder of the current division.
         copyThis = copyThis - (copyOther << shift);
+        // Continue the process until copyThis is less than copyOther, meaning can't get an integer result from the division. In this case, copyThis is the remainder.
     }
     return move(copyThis);
 }
 
+/**
+ * @brief Minus operator for vec4state.
+ * 
+ * Calculates the negative value of this vector. The method calculates the two's complement of this vector by inverting all the bits and adding 1.
+ * 
+ * @return A new vector that holds the result of the minus operation. If this vector holds unknown bits, then the result is only x's.
+ */
 vec4state vec4state::operator-() const {
     if (unknown) {
         return vec4state(X, numBits);
@@ -1073,6 +1396,14 @@ vec4state vec4state::operator-() const {
     return ~*this + vec4state(1);
 }
 
+/**
+ * @brief Power operator for vec4state.
+ * 
+ * Calculates the value of the vector to the power of other vector. The method calculates the power of the vector by multiplying the vector by itself other times.
+ * 
+ * @param other The vector to raise the value to the power of.
+ * @return A new vector that holds the result of the power operation. If one of the vectors holds unknown bits, then the result is only x's.
+ */
 vec4state vec4state::power(const vec4state& other) const {
     vec4state result;
     // If the base or the power has an unknown value, the result is unknown.
@@ -1092,22 +1423,40 @@ vec4state vec4state::power(const vec4state& other) const {
     return move(result);
 }
 
+/**
+ * @brief String representation of the vector.
+ * 
+ * Creates a string representation of the vecor, where each bit is represented by it's corresponding BitValue (0, 1, x, or z). This is done by iterating over the vector's VPIs from MSB to LSB, and for each VPI, iterating over the bits in it from MSB to LSB and adding the corresponding BitValue to the result string.
+ * 
+ * @return A string representation of the vector.
+ */
 string vec4state::toString() const {
     string result;
+    // Iterate over the vector's VPIs from MSB to LSB.
+    // i represents the index of the VPI in the vector.
     for (long long i = vectorSize - 1; i >= 0; i--) {
         uint32_t currAval = vector[i].getAval();
         uint32_t currBval = vector[i].getBval();
+        // Iterate over the bits in the VPI from MSB to LSB.
         for (int j = 31; j >= 0; j--) {
+            // j represents the index of the bit in the VPI.
+            // If the current VPI is the last one and the number of bits is not a multiple of 32 and the current bit is out of range, continue.
             if (i == vectorSize - 1 && numBits % BITS_IN_VPI != 0 && j > (numBits % BITS_IN_VPI) - 1) {
                 continue;
             }
+            // Otherwise, the current bit is in range, add the corresponding BitValue to the result string.
+            // Calculate the mask for the current bit.
             uint32_t mask = 1 << j;
+            // If the current bit is a z bit, add 'z' to the result string.
             if ((currAval & mask) && (currBval & mask)) {
                 result += Z;
+            // If the current bit is a 1 bit, add '1' to the result string.
             } else if (currAval & mask) {
                 result += ONE;
+            // If the current bit is a x bit, add 'x' to the result string.
             } else if (currBval & mask) {
                 result += X;
+            // If the current bit is a 0 bit, add '0' to the result string.
             } else {
                 result += ZERO;
             }
@@ -1116,10 +1465,18 @@ string vec4state::toString() const {
     return result;
 }
 
+/**
+ * @brief Bool conversion operator for vec4state.
+ * 
+ * Checks if the vector holds at least one 1 bit. This is done by iterating over the vector's VPIs, and checking if at least one of the VPIs has a bit set to 1.
+ * 
+ * @return true if the vector holds at least one 1 bit.
+ * @return false if the vector holds only 0 or unknown bits.
+ */
 vec4state::operator bool() const {
     // If the vector has at least one bit set to 1, return true.
     for (long long i = 0; i < vectorSize; i++) {
-        uint32_t oneBits = vector[i].getOneBits();
+        uint32_t oneBits = vector[i].getKnownBits();
         if (oneBits != 0) {
             return true;
         }
@@ -1128,28 +1485,54 @@ vec4state::operator bool() const {
     return false;
 }
 
+/**
+ * @brief Conversion operator to vec2state for vec4state.
+ * 
+ * Converts this vector to a 2-state vector by replacing all the unknown values with 0's. This is done by iterating over the vector's VPIs, setting the z bits to x bits (aval = 0, bval = 1), and then setting the x bits to 0 bits.
+ */
 void vec4state::convertTo2State() {
     for (int i = 0; i < vectorSize; i++) {
         // Replace the z bits with x bits.
-        vector[i].setAval(vector[i].getOneBits());
+        vector[i].setAval(vector[i].getKnownBits());
         // Zero down the unknown bits.
         vector[i].setBval(0);
     }
     unknown = false;
 }
 
+/**
+ * @brief Gets the number of bits in this vector.
+ * 
+ * @return The number of bits in this vector.
+ */
 long long vec4state::getNumBits() const {
     return numBits;
 }
 
+/**
+ * @brief Gets the vector of the VPI elements in this vector.
+ * 
+ * @return The vector of the VPI elements in this vector.
+ */
 shared_ptr<VPI[]> vec4state::getVector() const {
     return vector;
 }
 
+/**
+ * @brief Gets the number of VPI elements in this vector.
+ * 
+ * @return The number of VPI elements in this vector.
+ */
 long long vec4state::getVectorSize() const {
     return vectorSize;
 }
 
+/**
+ * @brief Checks if the vector contains any unknown values.
+ * 
+ * @return true if the vector contains any unknown values.
+ * @return false if the vector does not contain any unknown values.
+ */
 bool vec4state::isUnknown() const {
     return unknown;
 }

@@ -1,3 +1,13 @@
+/**
+ * @file tests-vec4state.cc
+ * @brief Tests for the vec4state class.
+ * 
+ * This file contains the tests for the vec4state class, which is a versatile C++ library that enables efficient representation and arithmetic operations on 4-value bit vectors, emulating the functionalities commonly found in hardware description languages like SystemVerilog.
+ * 
+ * @author Mia Ekheizer, Yuval Shasha
+ * @date 2024-08-24
+ */
+
 #include <gtest/gtest.h>
 #include "vec4state.h"
 #include <string>
