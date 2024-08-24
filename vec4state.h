@@ -16,15 +16,14 @@
 #include "vpi.h"
 #include <type_traits>
 #include <memory>
+#include "vec4stateException.h"
+#include "math.h"
+#include <iostream>
 
 #define MASK_32 0xFFFFFFFF
 #define BITS_IN_CELL 32
 #define BITS_IN_BYTE 8
 
-/**
- * @namespace std
- * 
- */
 using namespace std;
 
 /**
@@ -76,14 +75,14 @@ public:
     template<typename T, typename enable_if<is_integral<T>::value, bool>::type = true>
     vec4state(T num) {
         numBits = sizeof(T) * BITS_IN_BYTE;
-        vectorSize = (numBits + BITS_IN_CELL - 1) / BITS_IN_CELL;
+        vectorSize = (numBits + BITS_IN_VPI - 1) / BITS_IN_VPI;
         unknown = false;
         vector = shared_ptr<VPI[]>(new VPI[vectorSize]);
         int mask = MASK_32;
         for (long long i = 0; i < vectorSize; i++) {
             vector[i].setAval(uint32_t(num & mask));
             vector[i].setBval(0);
-            num >>= BITS_IN_CELL;
+            num >>= BITS_IN_VPI;
         }
     }
     
@@ -376,7 +375,6 @@ public:
      */
     vec4state operator>>(const long long num);
 
-    // Slice operators
     vec4state getBitSelect(const vec4state& index) const;
 
     template<typename T, typename enable_if<is_valid_type_for_vec4state<T>::value, bool>::type = true>
@@ -744,8 +742,6 @@ public:
         return power(vec4state(num));
     }
 
-    // Casting operator
-    // Replaces all the unknown values of the vector with 0's.
     /**
      * @brief Conversion operator to vec2state for vec4state.
      * 
@@ -782,7 +778,6 @@ public:
      */
     bool isUnknown() const;
 
-    // Returns a string representation of the vector.
     /**
      * @brief String representation of the vector.
      * 
@@ -835,12 +830,12 @@ private:
     /**
      * @brief Increment number of bits for vec4state.
      * 
-     * Increments the number of bits in the vector to newNumBits by zero-extending the vector. Throws an exception if newNumBits is less than the current number of bits or non-positive. If newNumBits is the same as the current number of bits, the vector remains unchanged.
+     * Increments the number of bits in the vector to newNumBits by assigning a bigger VPI array to this vector, copying the values from the original array to the new one, and zero-extending the new VPIs in the new array. Throws vec4stateExceptionInvalidSize if newNumBits is less than the current number of bits or non-positive. If newNumBits is the same as the current number of bits, the vector remains unchanged.
      * 
      * @param newNumBits The new number of bits in the vector.
      */
     void incNumBits(long long newNumBits);
-    // Truncates the vector to newNumBits.
+
     /**
      * @brief Truncate number of bits for vec4state.
      * 
@@ -869,7 +864,6 @@ private:
      */
     vec4state bitwiseAndAvalBval(const vec4state& other);
 
-    // Returns a vector which it's aval is the result of the addition of the aval of the vector and the aval of other, and it's bval is the result of the addition of the bval of the vector and the bval of other.
     /**
      * @brief Addition of aval and bval of VPIs for vec4state.
      * 
@@ -889,7 +883,6 @@ private:
      */
     void setNumBits(long long newNumBits);
 
-    // Returns a vector which holds the values of this vector from the first bit to end bit, where end is in the range of the number of bits of this vector.
     /**
      * @brief Gets the slice of the vector from the first index to end index for vec4state.
      * 
@@ -899,10 +892,11 @@ private:
      * @return A new vector that holds the slice of the vector from the first index to end index.
      */
     vec4state getPartValidRange(long long end) const;
+
     /**
      * @brief Sets unknown field for vec4state.
      * 
-     * Scans the vector and sets the unknown flag to true if the vector contains any unknown values, and to false otherwise.
+     * Scans the vector and sets the unknown flag to true if encountered unknown values in the vector, and to false otherwise.
      */
     void setUnknown();
 
