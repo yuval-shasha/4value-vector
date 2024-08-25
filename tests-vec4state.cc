@@ -11,7 +11,6 @@
 #include <gtest/gtest.h>
 #include "vec4state.h"
 #include <string>
-#include <exception>
 
 /**
  * @class vec4stateTest
@@ -1668,5 +1667,3 @@ TEST_F(vec4stateTest, TestConversionToBoolOneAndXVector) {
 TEST_F(vec4stateTest, TestConversionToBoolStringVector) {
     EXPECT_TRUE(stringVector);
 }
-
-// TODO: add tests for getters and setters

@@ -121,7 +121,7 @@ void vec4state::decNumBits(long long newNumBits) {
     }
     long long indexLastCell = calcVectorSize(newNumBits) - 1;
     long long offset = newNumBits % BITS_IN_VPI;
-    long long mask = (long long)(pow(2, offset) - 1);
+    long long mask = MASK_32 >> (BITS_IN_VPI - offset);
     numBits = newNumBits;
     // If no need to delete VPI elements, remove the unnecessary bits from the last VPI.
     if (vectorSize == indexLastCell + 1) {
@@ -527,7 +527,7 @@ void zeroDownOutOfRangeBits(shared_ptr<VPI[]> vector, long long vectorSize, long
     long long indexLastCell = calcVectorSize(numBits) - 1;
     // Find the offset of the last relevant bit in the last relevant VPI.
     long long offset = numBits % BITS_IN_VPI;
-    long long mask = (long long)(pow(2, offset) - 1);
+    long long mask = MASK_32 >> (BITS_IN_VPI - offset);
     // Zero down the bits that are out of range.
     for (long long i = indexLastCell; i < vectorSize; i++) {
         // If the current cell is the last relevant cell.

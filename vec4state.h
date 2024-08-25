@@ -18,7 +18,6 @@
 #include <memory>
 #include "vec4stateException.h"
 #include "math.h"
-#include <iostream>
 
 /**
  * @brief A mask for all the bits in a VPI.
