@@ -27,16 +27,6 @@
 using namespace std;
 
 /**
- * @brief Type trait to check if a type is a valid type for a vec4state constructor.
- * 
- * This type trait checks if a type is either an integral type, a string or a const char*. If the type is valid, the relevant methods of vec4state can be used with this type.
- * 
- * @tparam The type to check.
- */
-template <typename T>
-struct is_valid_type_for_vec4state : integral_constant<bool, is_integral<T>::value || is_same<T, std::string>::value || is_same<T, const char*>::value> {};
-
-/**
  * @brief BitValue represents the four possible values of a bit in a 4-state vector.
  * 
  * The four possible values are: 0, 1, x and z.
@@ -48,6 +38,16 @@ enum BitValue {
     X = 'x',
     Z = 'z'
 };
+
+/**
+ * @brief Type trait to check if a type is a valid type for a vec4state constructor.
+ * 
+ * This type trait checks if a type is either an integral type, a string or a const char*. If the type is valid, the relevant methods of vec4state can be used with this type.
+ * 
+ * @tparam The type to check.
+ */
+template <typename T>
+struct is_valid_type_for_vec4state : integral_constant<bool, is_integral<T>::value || is_same<T, std::string>::value || is_same<T, const char*>::value || is_same<T, BitValue>::value> {};
 
 /**
  * @class vec4state
@@ -94,6 +94,15 @@ public:
      * @param str The value to initialize the vector with, must be a string that holds only BitValues.
      */
     vec4state(string str);
+
+    /**
+     * @brief Bit constructor for vec4state.
+     * 
+     * Initializes a vector that holds bit of size 1. If bit is a character that is not a BitValue, the vector is initialized to x and vec4stateExceptionInvalidInput is thrown.
+     * 
+     * @param bit The bit to initialize the vector with, must be a BitValue.
+     */
+    vec4state(char bit);
 
     /**
      * @brief Copy constructor for vec4state.
@@ -453,12 +462,37 @@ public:
         setBitSelect(vec4state(index), vec4state(newValue));
     }
 
-    // Returns a vector that is a slice of the original vector from start to end.
+    /**
+     * @brief Get part select operator for vec4state.
+     * 
+     * Extracts the part of this vector from index start to index end. If the start index is greater than the end index, vec4stateExceptionInvalidRange is thrown. If the slice is out of range, the out of range bits are set to x. This is done by shifting this vector's bit until reaching the desired bits, then extracting the relevant bits from the vector. If the part is out of range, the out of range bits are set to x.
+     * 
+     * @param end The end index of the part to extract.
+     * @param start The start index of the part to extract.
+     * @return The part of this vector from index start to index end.
+     */
     vec4state getPartSelect(long long end, long long start) const;
 
-    // Sets the slice of the original vector from start to end to the value of other.
+    /**
+     * @brief Set part select operator for vec4state.
+     * 
+     * Sets the part of the vector starting from the start index and ending at end index, to the value stored in other vector. If the end index is less than the start index, vec4stateExceptionInvalidRange is thrown. This is done by zeroing down the bits between the start and the end indices and inserting the bits of other vector into the slice. If the slice is completely out of range, the vector remains unchanged. If only start or end are out of range, the slice is truncated to the valid range.
+     * 
+     * @param end The end index of the part to set.
+     * @param start The start index of the part to set.
+     * @param other The vector to set the part to.
+     */
     void setPartSelect(long long end, long long start, vec4state other);
 
+    /**
+     * @brief Set part select operator for vec4state.
+     * 
+     * Creates a vec4state that holds the value of num, then sets the part of the vector starting from the start index and ending at end index, to num. If the end index is less than the start index, vec4stateExceptionInvalidRange is thrown. This is done by zeroing down the bits between the start and the end indices and inserting the bits of num into the slice. If the slice is completely out of range, the vector remains unchanged. If only start or end are out of range, the slice is truncated to the valid range.
+     * 
+     * @param end The end index of the part to set.
+     * @param start The start index of the part to set.
+     * @param other The vector to set the part to.
+     */
     template<typename T, typename enable_if<is_valid_type_for_vec4state<T>::value, bool>::type = true>
     void setPartSelect(long long end, long long start, T num) {
         setPartSelect(end, start, vec4state(num));
@@ -907,6 +941,36 @@ private:
      * @return The numerical value that the vector holds.
      */
     long long extractNumberFromVector() const;
+
+    /**
+     * @brief Get part of the vector that is in range.
+     * 
+     * Extracts the part of the vector that is in range, starting from the first bit and ending at the given end index. If the end index is out of range, vec4stateExceptionInvalidInput is thrown. This is done by initializing the result vector to end z bits, which means that it holds end 1 bits in it's aval and bval. Then, the method iterates over the vector's VPIs and copying the relevant bits to the result vector by performing a bitwise AND operation between the vector's VPIs and the result vector's VPIs.
+     * 
+     * @param end The end index of the part to extract.
+     * @return The part of the vector from the first bit to the end index.
+     */
+    vec4state getPartValidRange(long long end) const;
+
+    /**
+     * @brief Addition of the aval and bval of the vectors.
+     * 
+     * Adds the aval and bval of the vectors, resulting in a new vector. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector. The method iterates over the vectors' VPIs and calculates the sum of the aval and bval of each VPI.
+     * 
+     * @param other The vector to add to this vector.
+     * @return A new vector that holds the result of the addition.
+     */
+    vec4state additionAvalBval(const vec4state& other) const;
+
+    /**
+     * @brief Bitwise AND of the aval and bval of the vectors.
+     * 
+     * Calculates the bitwise AND of the aval and bval of the vectors. The method iterates over the vectors' VPIs and calculates the bitwise AND of the aval and bval of each VPI. If the vectors are of unequal bit lengths, the smaller vector is zero-extended to the size of the larger vector.
+     * 
+     * @param other The vector to perform the bitwise AND operation with.
+     * @return A new vector that holds the result of the bitwise AND operation.
+     */
+    vec4state bitwiseAndAvalBval(const vec4state& other) const;
 
     /**
      * @brief Sets the number of bits to a new number for vec4state.
