@@ -450,11 +450,11 @@ vec4state vec4state::operator|(const vec4state& other) const {
         // If the vectors hold z's, change the z's to x's.
         if (i <= vectorSize - 1) {
             VPI currThisVPI = copyThis.vector[i];
-            copyThis.vector[i].setAval(currThisVPI.getAval() - (currThisVPI.getAval() & currThisVPI.getBval()));
+            copyThis.vector[i].setAval(currThisVPI.getKnownBits());
         }
         if (i <= other.vectorSize - 1) {
             VPI currOtherVPI = copyOther.vector[i];
-            copyOther.vector[i].setAval(currOtherVPI.getAval() - (currOtherVPI.getAval() & currOtherVPI.getBval()));
+            copyOther.vector[i].setAval(currOtherVPI.getKnownBits());
         }
     }
     for (long long i = 0; i < maxVectorSize; i++) {
