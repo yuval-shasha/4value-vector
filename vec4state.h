@@ -20,8 +20,19 @@
 #include "math.h"
 #include <iostream>
 
+/**
+ * @brief A mask for all the bits in a VPI.
+ */
 #define MASK_32 0xFFFFFFFF
+
+/**
+ * @brief The number of bits in a VPI.
+ */
 #define BITS_IN_VPI 32
+
+/**
+ * @brief The number of bits in a byte.
+ */
 #define BITS_IN_BYTE 8
 
 using namespace std;
@@ -491,7 +502,8 @@ public:
      * 
      * @param end The end index of the part to set.
      * @param start The start index of the part to set.
-     * @param other The vector to set the part to.
+     * @tparam The type of num, must be an integral type or a string.
+     * @param num The value to set the part to.
      */
     template<typename T, typename enable_if<is_valid_type_for_vec4state<T>::value, bool>::type = true>
     void setPartSelect(long long end, long long start, T num) {

@@ -10,9 +10,24 @@
 
 #include "vec4state.h"
 
+/**
+ * @brief The number of bits in a VPI.
+ */
 #define BITS_IN_VPI 32
+
+/**
+ * @brief The maximum number of VPI elements in a vector that can hold a number.
+ */
 #define CELLS_IN_INDEX_VECTOR 2
+
+/**
+ * @brief A mask for all the bits in a VPI.
+ */
 #define MASK_32 0xFFFFFFFF
+
+/**
+ * @brief A mask for the 33rd bit in a VPI.
+ */
 #define MASK_BIT_33 0x100000000 
 
 using namespace std;
@@ -1029,7 +1044,7 @@ void vec4state::setPartSelect(long long end, long long start, vec4state other) {
         // Adjust the size of other to the size of the slice.
         other.setNumBits(end - start + 1);
         // Save the bits before the slice.
-        vec4state beforeStart = vec4state(ZERO, 1);
+        vec4state beforeStart = vec4state(ZERO, max(start, (long long)(1)));
         if (start > 0) {
             beforeStart = getPartValidRange(start);
         } 
